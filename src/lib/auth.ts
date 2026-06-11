@@ -1,8 +1,9 @@
 import { compare } from "bcryptjs";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { query } from "@/lib/db";
+import { type NextAuthOptions } from "next-auth";
 
-export const authOptions = {
+export const authOptions : NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
