@@ -38,7 +38,7 @@ export async function handleAppointment(
   patientId: string
 ) {
 
-      console.log("Starting appointment handler");
+      // console.log("Starting appointment handler");
 
   const details =
     await extractAppointmentDetails(

@@ -99,7 +99,7 @@ export async function POST(
   const session =
   await getServerSession(
     authOptions
-  );
+      );
 
     const intent =
       await detectIntent(
@@ -129,16 +129,21 @@ export async function POST(
     );
   break;
 
-     case "APPOINTMENT":
+    case "APPOINTMENT":
   if (!session?.user?.id) {
     answer =
       "Please login to book an appointment.";
+  } else if (
+    (session.user as any).role !==
+    "PATIENT"
+  ) {
+    answer =
+      "Only patients can book appointments.";
   } else {
     answer =
       await handleAppointment(
         message,
-        (session.user as any)
-          .id
+        (session.user as any).id
       );
   }
   break;
