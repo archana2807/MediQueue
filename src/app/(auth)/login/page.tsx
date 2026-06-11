@@ -68,9 +68,11 @@ export default function LoginPage() {
           {/* Low-Profile Compact Demo Credentials */}
           <Card className="shadow-sm border-neutral-200/80 dark:border-zinc-800 bg-background/50 backdrop-blur-sm">
             <CardContent className="p-4 space-y-3">
+              
               <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground">
                 <KeyRound className="h-3.5 w-3.5" />
                 <span>Quick Demo Access (Password: Admain)</span>
+                
               </div>
 
               {/* Responsive columns to reduce height */}
@@ -91,6 +93,16 @@ export default function LoginPage() {
                   <p className="text-muted-foreground font-mono truncate">patient@gmail.com</p>
                 </div>
               </div>
+                <div >
+  <a
+    href="/reports/demo-flow.pdf"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-sm text-blue-600 underline"
+  >
+    MediQueue End-to-End Demo Flow
+  </a>
+</div>
             </CardContent>
           </Card>
 

@@ -1,26 +1,9 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function Loading() {
   return (
-    <Card>
-      <CardHeader>
-        <div className="h-6 w-40 animate-pulse rounded bg-muted" />
-      </CardHeader>
-
-      <CardContent>
-        <div className="space-y-4">
-          {[1, 2, 3, 4].map((item) => (
-            <div
-              key={item}
-              className="h-10 animate-pulse rounded bg-muted"
-            />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <Spinner className="size-8" />
+    </div>
   );
 }

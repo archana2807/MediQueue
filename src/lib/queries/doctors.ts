@@ -176,3 +176,27 @@ export async function createDoctor(
 
   return result.rows[0];
 }
+
+
+export async function findDoctor(
+  doctorName: string
+) {
+  const result =
+    await pool.query(
+      `
+      SELECT
+        d.id,
+        d.specialization,
+        u.name
+      FROM doctors d
+      JOIN users u
+        ON u.id = d.user_id
+      WHERE LOWER(u.name)
+      LIKE LOWER($1)
+      LIMIT 1
+      `,
+      [`%${doctorName}%`]
+    );
+
+  return result.rows[0];
+}

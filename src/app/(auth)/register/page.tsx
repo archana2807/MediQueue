@@ -92,6 +92,16 @@ export default function RegisterPage() {
                   <p className="text-muted-foreground font-mono truncate">patient@gmail.com</p>
                 </div>
               </div>
+              <div >
+  <a
+    href="/reports/demo-flow.pdf"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-sm text-blue-600 underline"
+  >
+    MediQueue End-to-End Demo Flow
+  </a>
+</div>
             </CardContent>
           </Card>
 
