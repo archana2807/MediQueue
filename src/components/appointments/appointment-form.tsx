@@ -82,7 +82,7 @@ const user =
   const isPatient =
   (user as any)?.role ===
   "PATIENT";
-  
+  const isExistingPatient = !!patientId;
  
   
  
@@ -269,6 +269,13 @@ const user =
     }
   };
 
+
+  useEffect(() => {
+  if (isPatient && !appointmentId) {
+    setValue("status", "PENDING");
+  }
+  }, [isPatient, appointmentId, setValue]);
+  
 return (
 <form
 onSubmit={handleSubmit(
@@ -309,7 +316,8 @@ onSubmit
       )
     }
     disabled={isPatient}
-    placeholder="Patient Name"
+          placeholder="Patient Name"
+           readOnly={isPatient || isExistingPatient}
   />
 </Field>
 
@@ -394,7 +402,9 @@ onSubmit
         Status
       </FieldLabel>
 
-      <select
+        <select
+              disabled={isPatient}
+
         className="h-10 w-full rounded-md border px-3"
         value={watch(
           "status"

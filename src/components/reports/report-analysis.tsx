@@ -145,7 +145,7 @@ export default function ReportAnalysis() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto space-y-6">
       <div className="rounded-xl border bg-white p-6 shadow-sm">
         <h1 className="text-2xl font-bold">
           AI Medical Report Analysis

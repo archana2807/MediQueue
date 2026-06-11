@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-
+import { Badge } from "@/components/ui/badge";
+import { getStatusClass } from "@/lib/utils";
 import DataTable from "@/components/common/data-table";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
 import DeleteAppointmentButton from "./delete-appointment-button";
-
 type Appointment = {
   id: string;
   patient_name: string;
@@ -67,8 +67,21 @@ const isPatient =
         await response.json();
 
       setAppointments(
-        result.data || []
-      );
+  (result.data || []).map(
+    (appointment: Appointment) => ({
+      ...appointment,
+      appointment_date: new Date(
+        appointment.appointment_date
+      ).toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    })
+  )
+);
 
       setTotal(
         result.total || 0
@@ -115,15 +128,27 @@ const isPatient =
           key: "doctor_name",
           label: "Doctor",
         },
+       {
+  key: "appointment_date",
+  label: "Appointment Date",
+  
+},
         {
-          key: "appointment_date",
-          label:
-            "Appointment Date",
-        },
-        {
-          key: "status",
-          label: "Status",
-        },
+  key: "status",
+  label: "Status",
+  render: (value: string) => (
+    <Badge
+      className={getStatusClass(
+        value
+      )}
+    >
+      {value.replace(
+        "_",
+        " "
+      )}
+    </Badge>
+  ),
+},
       ]}
       actions={(
   appointment

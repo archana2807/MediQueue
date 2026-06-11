@@ -75,8 +75,15 @@ try {
 return (
 <div
 className={cn("flex flex-col gap-6", className)}
-{...props}
-> <Card> <CardHeader> <CardTitle>
+    {...props}
+    
+
+  >
+    
+    <Card>
+      
+      
+      <CardHeader> <CardTitle>
 Login to your account </CardTitle>
 
 
@@ -113,12 +120,12 @@ Login to your account </CardTitle>
                 Password
               </FieldLabel>
 
-              <Link
+              {/* <Link
                 href="/forgot-password"
                 className="ml-auto text-sm hover:underline"
               >
                 Forgot Password?
-              </Link>
+              </Link> */}
             </div>
 
             <Input
@@ -145,14 +152,14 @@ Login to your account </CardTitle>
                 : "Login"}
             </Button>
 
-            <Button
+            {/* <Button
               variant="outline"
               type="button"
               className="w-full"
               disabled={loading}
             >
               Login with Google
-            </Button>
+            </Button> */}
 
             <FieldDescription className="text-center">
               Don't have an account?{" "}

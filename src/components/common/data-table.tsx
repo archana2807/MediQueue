@@ -7,6 +7,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 type Column = {
   key: string;
   label: string;
+  render?: (
+    value: any,
+    row: Record<string, any>
+  ) => React.ReactNode;
 };
 
 type Props = {
@@ -163,18 +167,16 @@ export default function DataTable({
                       column
                     ) => (
                       <td
-                        key={
-                          column.key
-                        }
-                        className="px-4 py-3"
-                      >
-                        {
-                          row[
-                            column
-                              .key
-                          ]
-                        }
-                      </td>
+  key={column.key}
+  className="px-4 py-3"
+>
+  {column.render
+    ? column.render(
+        row[column.key],
+        row
+      )
+    : row[column.key]}
+</td>
                     )
                   )}
 

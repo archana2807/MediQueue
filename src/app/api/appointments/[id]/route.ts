@@ -51,14 +51,14 @@ export async function PUT(
       await request.json();
 
     const appointment =
-      await updateAppointment(
-        id,
-        body.patient_id,
-        body.doctor_id,
-        body.appointment_date,
-        // body.queue_number,
-        body.status
-      );
+  await updateAppointment(
+    id,
+    body.patient_id,
+    body.patient_phone,
+    body.doctor_id,
+    body.appointment_date,
+    body.status
+  );
 
     return NextResponse.json({
       success: true,

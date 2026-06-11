@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import { Badge } from "@/components/ui/badge";
+import { getStatusClass } from "@/lib/utils";
 import DataTable from "@/components/common/data-table";
 import QueueActions from "./queue-actions";
 import DoctorNotesModal from "@/components/common/doctor-notes-modal";
-
+import { formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
 type QueueItem = {
   id: string;
@@ -72,8 +73,15 @@ const [
         await response.json();
 
       setQueue(
-        result.data || []
-      );
+  (result.data || []).map(
+    (item: QueueItem) => ({
+      ...item,
+      appointment_date: formatDateTime(
+        item.appointment_date
+      ),
+    })
+  )
+);
 
       setTotal(
         result.total || 0
@@ -186,9 +194,21 @@ const [
           label: "Appointment Date",
         },
         {
-          key: "status",
-          label: "Status",
-        },
+  key: "status",
+  label: "Status",
+  render: (value: string) => (
+    <Badge
+      className={getStatusClass(
+        value
+      )}
+    >
+      {value.replaceAll(
+        "_",
+        " "
+      )}
+    </Badge>
+  ),
+},
       ]}
       actions={(item) => (
   <QueueActions

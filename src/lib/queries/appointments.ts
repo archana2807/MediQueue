@@ -201,30 +201,39 @@ export async function createAppointment(
 export async function updateAppointment(
   id: string,
   patientId: string,
+  patientPhone: string,
   doctorId: string,
   appointmentDate: string,
   status: string
 ) {
-  const result =
-    await pool.query(
-      `
-      UPDATE appointments
-      SET
-        patient_id = $1,
-        doctor_id = $2,
-        appointment_date = $3,
-        status = $4
-      WHERE id = $5
-      RETURNING *
-      `,
-      [
-        patientId,
-        doctorId,
-        appointmentDate,
-        status,
-        id,
-      ]
-    );
+  await pool.query(
+    `
+    UPDATE users
+    SET phone = $1
+    WHERE id = $2
+    `,
+    [patientPhone, patientId]
+  );
+
+  const result = await pool.query(
+    `
+    UPDATE appointments
+    SET
+      patient_id = $1,
+      doctor_id = $2,
+      appointment_date = $3,
+      status = $4
+    WHERE id = $5
+    RETURNING *
+    `,
+    [
+      patientId,
+      doctorId,
+      appointmentDate,
+      status,
+      id,
+    ]
+  );
 
   return result.rows[0];
 }
