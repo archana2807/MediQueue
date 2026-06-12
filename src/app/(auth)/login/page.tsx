@@ -8,7 +8,9 @@ import {
   KeyRound 
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-
+import Link from "next/link";
+import { ExternalLink, PlayCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 export default function LoginPage() {
   return (
     // Changed grid flow: mobile stacks normally (form top), lg screens use 2 columns
@@ -16,6 +18,7 @@ export default function LoginPage() {
       
       {/* Right Side (Now Top on Mobile) */}
       <div className="flex items-center justify-center p-6 sm:p-10 order-1 lg:order-2 bg-background">
+        
         <LoginForm className="w-full max-w-sm" />
       </div>
 
@@ -28,6 +31,18 @@ export default function LoginPage() {
             <div className="flex items-center gap-2.5 text-primary">
               <Activity className="h-7 w-7 stroke-[2.5]" />
               <span className="text-2xl font-bold tracking-tight">MediQueue</span>
+               <Link
+    href="https://youtu.be/Wffep02dT3Y"
+    target="_blank"
+  >
+    <Button
+      size="sm"
+      variant="outline"
+    >
+      <PlayCircle className="mr-2 h-4 w-4" />
+      Demo Video
+    </Button>
+  </Link>
             </div>
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
               AI-Powered Hospital Management System for Patients, Doctors, and Administrators.
