@@ -146,54 +146,33 @@ export async function createAppointment(
       userResult.rows[0].id;
   }
 
-  // Generate next queue number
-  const queueResult =
-    await pool.query(
-      `
-      SELECT
-        COALESCE(
-          MAX(queue_number),
-          0
-        ) AS last_queue
-      FROM appointments
-      `
-    );
-
-  const queueNumber =
-    Number(
-      queueResult.rows[0]
-        .last_queue
-    ) + 1;
-
   const result =
-    await pool.query(
-      `
-      INSERT INTO appointments (
-        id,
-        patient_id,
-        doctor_id,
-        appointment_date,
-        queue_number,
-        status
-      )
-      VALUES (
-        gen_random_uuid(),
-        $1,
-        $2,
-        $3,
-        $4,
-        $5
-      )
-      RETURNING *
-      `,
-      [
-        patientId,
-        doctorId,
-        appointmentDate,
-        queueNumber,
-        status,
-      ]
-    );
+  await pool.query(
+    `
+    INSERT INTO appointments (
+      id,
+      patient_id,
+      doctor_id,
+      appointment_date,
+      queue_number,
+      status
+    )
+    VALUES (
+      gen_random_uuid(),
+      $1,
+      $2,
+      $3,
+      NULL,
+      'PENDING'
+    )
+    RETURNING *
+    `,
+    [
+      patientId,
+      doctorId,
+      appointmentDate,
+    ]
+  );
 
   return result.rows[0];
 }
@@ -206,36 +185,112 @@ export async function updateAppointment(
   appointmentDate: string,
   status: string
 ) {
-  await pool.query(
-    `
-    UPDATE users
-    SET phone = $1
-    WHERE id = $2
-    `,
-    [patientPhone, patientId]
-  );
+  const client =
+    await pool.connect();
 
-  const result = await pool.query(
-    `
-    UPDATE appointments
-    SET
-      patient_id = $1,
-      doctor_id = $2,
-      appointment_date = $3,
-      status = $4
-    WHERE id = $5
-    RETURNING *
-    `,
-    [
-      patientId,
-      doctorId,
-      appointmentDate,
-      status,
-      id,
-    ]
-  );
+  try {
+    await client.query("BEGIN");
 
-  return result.rows[0];
+    await client.query(
+      `
+      UPDATE users
+      SET phone = $1
+      WHERE id = $2
+      `,
+      [patientPhone, patientId]
+    );
+
+    const current =
+      await client.query(
+        `
+        SELECT
+          status,
+          queue_number
+        FROM appointments
+        WHERE id = $1
+        `,
+        [id]
+      );
+
+    if (
+      current.rows.length === 0
+    ) {
+      throw new Error(
+        "Appointment not found"
+      );
+    }
+
+    let queueNumber =
+      current.rows[0]
+        .queue_number;
+
+    const currentStatus =
+      current.rows[0].status;
+
+    // Assign queue number only
+    // when moving from
+    // PENDING -> CONFIRMED
+
+    if (
+      currentStatus ===
+        "PENDING" &&
+      status ===
+        "CONFIRMED" &&
+      !queueNumber
+    ) {
+      const queueResult =
+        await client.query(`
+          SELECT
+            COALESCE(
+              MAX(queue_number),
+              0
+            ) AS last_queue
+          FROM appointments
+        `);
+
+      queueNumber =
+        Number(
+          queueResult.rows[0]
+            .last_queue
+        ) + 1;
+    }
+
+    const result =
+      await client.query(
+        `
+        UPDATE appointments
+        SET
+          patient_id = $1,
+          doctor_id = $2,
+          appointment_date = $3,
+          status = $4,
+          queue_number = $5
+        WHERE id = $6
+        RETURNING *
+        `,
+        [
+          patientId,
+          doctorId,
+          appointmentDate,
+          status,
+          queueNumber,
+          id,
+        ]
+      );
+
+    await client.query(
+      "COMMIT"
+    );
+
+    return result.rows[0];
+  } catch (error) {
+    await client.query(
+      "ROLLBACK"
+    );
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function deleteAppointment(

@@ -26,15 +26,39 @@ export type RegisterFormData =
 
 export const doctorSchema =
   z.object({
-    name: z.string().min(2),
-    specialization:
-      z.string().min(2),
-    email:
-      z.email(),
-    phone:
-      z.string().min(10),
-    password:
-      z.string().min(6),
+    name: z
+      .string()
+      .min(
+        2,
+        "Doctor name must be at least 2 characters"
+      ),
+
+    specialization: z
+      .string()
+      .min(
+        2,
+        "Specialization is required"
+      ),
+
+    email: z
+      .string()
+      .email(
+        "Please enter a valid email address"
+      ),
+
+    phone: z
+      .string()
+      .regex(
+        /^[0-9]{10}$/,
+        "Phone number must be 10 digits"
+      ),
+
+    password: z
+      .string()
+      .min(
+        6,
+        "Password must be at least 6 characters"
+      ),
   });
 
 export type DoctorFormData =
@@ -43,14 +67,39 @@ export type DoctorFormData =
 
 export const appointmentSchema =
   z.object({
-    patient_id: z.string().optional(),
-    patient_name: z.string().optional(),
-    patient_phone: z.string().optional(),
+    patient_name: z
+      .string()
+      .min(
+        2,
+        "Patient name is required"
+      ),
 
-    doctor_id: z.string().min(1),
-    appointment_date: z.string().min(1),
-    // queue_number: z.number().min(1),
-    status: z.string().min(1),
+    patient_phone: z
+      .string()
+      .regex(
+        /^[0-9]{10}$/,
+        "Phone number must be 10 digits"
+      ),
+
+    doctor_id: z
+      .string()
+      .min(
+        1,
+        "Please select a doctor"
+      ),
+
+    appointment_date: z
+      .string()
+      .min(
+        1,
+        "Please select an appointment date"
+      ),
+
+    status: z.enum([
+      "PENDING",
+      "CONFIRMED",
+      "COMPLETED",
+    ]),
   });
 
 export type AppointmentFormData =

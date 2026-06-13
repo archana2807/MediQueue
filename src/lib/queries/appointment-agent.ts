@@ -64,16 +64,15 @@ export async function handleAppointment(
       "PENDING"
     );
 
-  return `
-Appointment booked successfully.
+ return `
+✅ Appointment booked successfully
 
-Doctor:
-${doctor.name}
+Doctor: ${doctor.name}
 
-Date:
-${details.appointmentDate}
+Date: ${details.appointmentDate}
 
-Queue Number:
-${appointment.queue_number}
+Status: Pending Confirmation
+
+You will receive a queue number once the appointment is confirmed by the clinic.
 `;
 }

@@ -65,15 +65,7 @@ export default function AppointmentForm({
     initialData?.patient_id
   );
 
-const [patientName, setPatientName] =
-  useState(
-    initialData?.patient_name || ""
-  );
 
-const [patientPhone, setPatientPhone] =
-  useState(
-    initialData?.patient_phone || ""
-  );
   const { data: session } =
   useSession();
 
@@ -101,43 +93,47 @@ const user =
   resolver: zodResolver(
     appointmentSchema
   ),
-  defaultValues: {
-    
-    status: "PENDING",
-  },
+ defaultValues: {
+  patient_name: "",
+  patient_phone: "",
+  doctor_id: "",
+  appointment_date: "",
+  status: "PENDING",
+}
 });
   
   useEffect(() => {
   if (!initialData) return;
 
   reset({
-    doctor_id:
-      initialData.doctor_id,
+  doctor_id: initialData.doctor_id,
 
-    appointment_date:
-      new Date(
-        initialData.appointment_date
-      )
-        .toISOString()
-        .slice(0, 16),
+  appointment_date: new Date(
+    initialData.appointment_date
+  )
+    .toISOString()
+    .slice(0, 16),
 
-    
-
-    status:
-      initialData.status,
-  });
+  status:
+    initialData.status as
+      | "PENDING"
+      | "CONFIRMED"
+      | "COMPLETED",
+});
 
   setPatientId(
     initialData.patient_id
   );
 
-  setPatientName(
-    initialData.patient_name ?? ""
-  );
+ setValue(
+  "patient_name",
+  initialData.patient_name ?? ""
+);
 
-  setPatientPhone(
-    initialData.patient_phone ?? ""
-  );
+setValue(
+  "patient_phone",
+  initialData.patient_phone ?? ""
+);
 }, [initialData, reset]);
 
   useEffect(() => {
@@ -151,13 +147,15 @@ const user =
       (user as any).id
     );
 
-    setPatientName(
-      user.name || ""
-    );
+   setValue(
+  "patient_name",
+  user.name || ""
+);
 
-    setPatientPhone(
-      (user as any).phone || ""
-    );
+setValue(
+  "patient_phone",
+  (user as any).phone || ""
+);
   }
 }, [isPatient, user]);
 
@@ -191,34 +189,27 @@ const user =
     data: AppointmentFormData
   ) => {
     try {
-      if (!patientName) {
-        toast.error(
-          "Patient is required"
-        );
-        return;
-      }
+     
 
-      const payload = {
-        patient_id:
-          patientId ?? null,
+   const payload = {
+  patient_id:
+    patientId ?? null,
 
-        patient_name:
-          patientName,
+  patient_name:
+    data.patient_name,
 
-        patient_phone:
-          patientPhone,
+  patient_phone:
+    data.patient_phone,
 
-        doctor_id:
-          data.doctor_id,
+  doctor_id:
+    data.doctor_id,
 
-        appointment_date:
-          data.appointment_date,
+  appointment_date:
+    data.appointment_date,
 
-        
-
-        status:
-          data.status,
-      };
+  status:
+    data.status,
+};
 
      const response =
   await fetch(
@@ -293,94 +284,100 @@ onSubmit
         patient.patientId
       );
 
-      setPatientName(
-        patient.patientName
-      );
+     setValue(
+  "patient_name",
+  patient.patientName
+);
 
-      setPatientPhone(
-        patient.patientPhone
-      );
+setValue(
+  "patient_phone",
+  patient.patientPhone
+);
     }}
   />
 )}
-      <Field>
+   
+
+<Field>
   <FieldLabel>
     Patient Name
   </FieldLabel>
 
   <Input
-    value={patientName}
-    onChange={(e) =>
-      setPatientName(
-        e.target.value
-      )
-    }
-    disabled={isPatient}
-          placeholder="Patient Name"
-           readOnly={isPatient || isExistingPatient}
-  />
-</Field>
+    {...register(
+      "patient_name"
+          )}
+            readOnly={!!appointmentId}
 
-<Field>
+    placeholder="Patient Name"
+  />
+
+  {errors.patient_name && (
+    <FieldDescription className="text-red-500">
+      {
+        errors.patient_name
+          .message
+      }
+    </FieldDescription>
+  )}
+      </Field>
+      <Field>
   <FieldLabel>
     Phone Number
   </FieldLabel>
 
   <Input
-    value={patientPhone}
-    onChange={(e) =>
-      setPatientPhone(
-        e.target.value
-      )
-    }
+    {...register(
+      "patient_phone"
+          )}
+            readOnly={!!appointmentId}
+
     placeholder="Phone Number"
   />
+
+  {errors.patient_phone && (
+    <FieldDescription className="text-red-500">
+      {
+        errors.patient_phone
+          .message
+      }
+    </FieldDescription>
+  )}
 </Field>
 
-    <Field>
-      <FieldLabel>
-        Doctor
-      </FieldLabel>
+   <Field>
+  <FieldLabel>
+    Doctor
+  </FieldLabel>
 
-      <SearchSelect
-        value={watch(
-          "doctor_id"
-        )}
-        onChange={(
-          value
-        ) =>
-          setValue(
-            "doctor_id",
-            value,
-            {
-              shouldValidate:
-                true,
-            }
-          )
+  <SearchSelect
+    value={watch("doctor_id")}
+    onChange={(value) =>
+      setValue(
+        "doctor_id",
+        value,
+        {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true,
         }
-        placeholder="Select Doctor"
-        options={doctors.map(
-          (
-            doctor
-          ) => ({
-            value:
-              doctor.id,
-            label:
-              doctor.name,
-          })
-        )}
-      />
+      )
+    }
+    placeholder="Select Doctor"
+    options={doctors.map(
+      (doctor) => ({
+        value: doctor.id,
+        label: doctor.name,
+      })
+    )}
+  />
 
-      {errors.doctor_id && (
-        <FieldDescription className="text-red-500">
-          {
-            errors
-              .doctor_id
-              .message
-          }
-        </FieldDescription>
-      )}
-    </Field>
+  {errors.doctor_id && (
+    <FieldDescription className="text-red-500">
+      {errors.doctor_id.message}
+    </FieldDescription>
+  )}
+</Field>
 
     <Field>
       <FieldLabel>
@@ -392,46 +389,45 @@ onSubmit
         {...register(
           "appointment_date"
         )}
-      />
+        />
+        {errors.appointment_date && (
+  <FieldDescription className="text-red-500">
+    {errors.appointment_date.message}
+  </FieldDescription>
+)}
     </Field>
 
   
 
-    <Field>
-      <FieldLabel>
-        Status
-      </FieldLabel>
+   <Field>
+  <FieldLabel>
+    Status
+  </FieldLabel>
 
-        <select
-              disabled={isPatient}
+  <select
+    {...register("status")}
+    disabled={isPatient}
+    className="h-10 w-full rounded-md border px-3"
+  >
+    <option value="PENDING">
+      Pending
+    </option>
 
-        className="h-10 w-full rounded-md border px-3"
-        value={watch(
-          "status"
-        )}
-        onChange={(
-          e
-        ) =>
-          setValue(
-            "status",
-            e.target
-              .value
-          )
-        }
-      >
-        <option value="PENDING">
-          Pending
-        </option>
+    <option value="CONFIRMED">
+      Confirmed
+    </option>
 
-        <option value="CONFIRMED">
-          Confirmed
-        </option>
+    <option value="COMPLETED">
+      Completed
+    </option>
+  </select>
 
-        <option value="COMPLETED">
-          Completed
-        </option>
-      </select>
-    </Field>
+  {errors.status && (
+    <FieldDescription className="text-red-500">
+      {errors.status.message}
+    </FieldDescription>
+  )}
+</Field>
 
     <Button
   type="submit"
