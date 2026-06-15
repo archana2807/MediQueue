@@ -1,107 +1,79 @@
 "use client";
 
 import { useState } from "react";
-
 import { toast } from "sonner";
-
+import { Phone, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
   appointmentId: string;
   status: string;
   onSuccess: () => void;
-  onComplete: (
-    appointmentId: string
-  ) => void;
+  onComplete: (appointmentId: string) => void;
 };
 
 export default function QueueActions({
-   appointmentId,
+  appointmentId,
   status,
   onSuccess,
   onComplete,
 }: Props) {
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  async function updateStatus(
-    newStatus: string
-  ) {
+  async function updateStatus(newStatus: string) {
     try {
       setLoading(true);
-
-      const response =
-        await fetch(
-          `/api/queue/${appointmentId}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-            body: JSON.stringify({
-              status: newStatus,
-            }),
-          }
-        );
-
-      const result =
-        await response.json();
+      const response = await fetch(`/api/queue/${appointmentId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const result = await response.json();
 
       if (!response.ok) {
-        toast.error(
-          result.message ||
-            "Failed to update queue"
-        );
+        toast.error(result.message || "Failed to update queue");
         return;
       }
 
-      toast.success(
-        "Queue updated successfully"
-      );
-
+      toast.success("Queue updated successfully");
       onSuccess();
     } catch (error) {
       console.error(error);
-
-      toast.error(
-        "Something went wrong"
-      );
+      toast.error("Something went wrong");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex gap-2">
-      {status ===
-        "CONFIRMED" && (
+    <div className="flex items-center gap-1">
+      {status === "CONFIRMED" && (
         <Button
-          size="sm"
+          size="icon"
+          variant="ghost"
           disabled={loading}
-          onClick={() =>
-            updateStatus(
-              "IN_PROGRESS"
-            )
-          }
+          onClick={() => updateStatus("IN_PROGRESS")}
+          className="h-8 w-8 hover:bg-teal-500/10"
+          title="Call Patient"
         >
-          Call Patient
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin text-teal-400" />
+          ) : (
+            <Phone className="h-4 w-4 text-teal-400" />
+          )}
         </Button>
       )}
 
-      {status ===
-        "IN_PROGRESS" && (
+      {status === "IN_PROGRESS" && (
         <Button
-          size="sm"
-          variant="default"
+          size="icon"
+          variant="ghost"
           disabled={loading}
-          onClick={() =>
-  onComplete(
-    appointmentId
-  )
-}
+          onClick={() => onComplete(appointmentId)}
+          className="h-8 w-8 hover:bg-emerald-500/10"
+          title="Complete Appointment"
         >
-          Complete
+          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
         </Button>
       )}
     </div>

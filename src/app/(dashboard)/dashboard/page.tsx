@@ -8,7 +8,7 @@ export default async function DashboardPage() {
     await getDashboardData();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <DashboardCounts
         stats={data.stats}
       />

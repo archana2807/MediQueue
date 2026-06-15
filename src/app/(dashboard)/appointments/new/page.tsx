@@ -9,7 +9,7 @@ import {
 
 export default function NewAppointmentPage() {
   return (
-    <Card >
+    <Card className="animate-fade-in">
       <CardHeader>
         <CardTitle>
           Create Appointment

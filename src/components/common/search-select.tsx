@@ -1,10 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Check,
-  ChevronsUpDown,
-} from "lucide-react";
+import { Check, ChevronsUpDown, Search, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -14,6 +11,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command";
 
 import {
@@ -42,94 +40,98 @@ export default function SearchSelect({
   placeholder,
   loading,
 }: Props) {
-  const [open, setOpen] =
-    React.useState(false);
+  const [open, setOpen] = React.useState(false);
 
-  const selected =
-    options.find(
-      (item) =>
-        item.value === value
-    );
-
-  const defaultOptions =
-    options.slice(0, 5);
+  const selected = options.find((item) => item.value === value);
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-    >
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
-          className="w-full justify-between"
+          aria-expanded={open}
+          className="h-10 w-full justify-between border-border/60 bg-background/50 px-3 text-sm font-normal hover:bg-background/80"
         >
-          {selected
-            ? selected.label
-            : placeholder}
-
-          <ChevronsUpDown className="h-4 w-4 opacity-50" />
+          {selected ? (
+            <span className="flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500/10">
+                <Check className="h-3 w-3 text-emerald-400" />
+              </span>
+              {selected.label}
+            </span>
+          ) : (
+            <span className="flex items-center gap-2 text-muted-foreground/60">
+              <Search className="h-4 w-4" />
+              {placeholder}
+            </span>
+          )}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-40" />
         </Button>
       </PopoverTrigger>
 
       <PopoverContent
-        className="w-[400px] p-0"
+        className="w-[var(--radix-popover-trigger-width)] p-0"
         align="start"
       >
         <Command>
           <CommandInput
-            placeholder={`Search ${placeholder}`}
+            placeholder={`Search ${placeholder.toLowerCase()}...`}
+            className="h-9"
           />
 
-          {loading ? (
-            <div className="p-4 text-sm">
-              Loading...
-            </div>
-          ) : (
-            <>
-              <CommandEmpty>
-                No results found.
-              </CommandEmpty>
+          <CommandList>
+            {loading ? (
+              <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+                Loading doctors...
+              </div>
+            ) : (
+              <>
+                <CommandEmpty>
+                  <div className="flex flex-col items-center gap-1 py-6 text-sm text-muted-foreground">
+                    <Search className="h-5 w-5 opacity-40" />
+                    No doctors found
+                  </div>
+                </CommandEmpty>
 
-              <CommandGroup heading="Suggestions">
-                {defaultOptions.map(
-                  (option) => (
-                    <CommandItem
-                      key={
-                        option.value
-                      }
-                      value={
-                        option.label
-                      }
-                      onSelect={() => {
-                        onChange(
-                          option.value
-                        );
-
-                        setOpen(
-                          false
-                        );
-                      }}
-                    >
-                      <Check
-                        className={`mr-2 h-4 w-4 ${
-                          value ===
-                          option.value
-                            ? "opacity-100"
-                            : "opacity-0"
+                <CommandGroup heading="Available Doctors">
+                  {options.map((option) => {
+                    const isSelected = value === option.value;
+                    return (
+                      <CommandItem
+                        key={option.value}
+                        value={option.label}
+                        onSelect={() => {
+                          onChange(option.value);
+                          setOpen(false);
+                        }}
+                        className={`flex items-center gap-2.5 py-2 ${
+                          isSelected ? "bg-emerald-500/10 text-emerald-400" : ""
                         }`}
-                      />
-
-                      {
-                        option.label
-                      }
-                    </CommandItem>
-                  )
-                )}
-              </CommandGroup>
-            </>
-          )}
+                      >
+                        <span
+                          className={`flex h-5 w-5 items-center justify-center rounded border transition-colors ${
+                            isSelected
+                              ? "border-emerald-500 bg-emerald-500 text-white"
+                              : "border-border/60"
+                          }`}
+                        >
+                          {isSelected && <Check className="h-3 w-3" />}
+                        </span>
+                        <span className="flex-1">{option.label}</span>
+                        {isSelected && (
+                          <span className="text-[10px] font-medium text-emerald-400/60">
+                            Selected
+                          </span>
+                        )}
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              </>
+            )}
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>

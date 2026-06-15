@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Trash2, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -25,48 +25,28 @@ type Props = {
 
 export default function DeleteAppointmentButton({
   id,
-   onSuccess,
+  onSuccess,
 }: Props) {
-  const router = useRouter();
-
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleDelete = async () => {
     try {
       setLoading(true);
-
-      const response =
-        await fetch(
-          `/api/appointments/${id}`,
-          {
-            method: "DELETE",
-          }
-        );
-
-      const result =
-        await response.json();
+      const response = await fetch(`/api/appointments/${id}`, {
+        method: "DELETE",
+      });
+      const result = await response.json();
 
       if (!response.ok) {
-        toast.error(
-          result.message ||
-            "Failed to delete appointment"
-        );
-
+        toast.error(result.message || "Failed to delete appointment");
         return;
       }
 
-      toast.success(
-        "Appointment deleted successfully"
-      );
-
+      toast.success("Appointment deleted successfully");
       onSuccess?.();
     } catch (error) {
       console.error(error);
-
-      toast.error(
-        "Something went wrong"
-      );
+      toast.error("Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -76,40 +56,37 @@ export default function DeleteAppointmentButton({
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button
-          size="sm"
-          variant="destructive"
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8 hover:bg-red-500/10"
+          title="Delete Appointment"
         >
-          Delete
+          <Trash2 className="h-4 w-4 text-red-400" />
         </Button>
       </AlertDialogTrigger>
 
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            Delete Appointment
-          </AlertDialogTitle>
-
+          <AlertDialogTitle>Delete Appointment</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be
-            undone. This will
-            permanently remove the
-            appointment from the
-            system.
+            This action cannot be undone. This will permanently remove the
+            appointment from the system.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         <AlertDialogFooter>
-          <AlertDialogCancel>
-            Cancel
-          </AlertDialogCancel>
-
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={loading}
+            className="bg-red-500 hover:bg-red-600"
           >
-            {loading
-              ? "Deleting..."
-              : "Delete"}
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="mr-2 h-4 w-4" />
+            )}
+            {loading ? "Deleting..." : "Delete"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

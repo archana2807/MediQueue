@@ -12,7 +12,7 @@ export const dynamic =
 
 export default function QueuePage() {
   return (
-    <Card>
+    <Card className="animate-fade-in">
       <CardHeader>
         <CardTitle>
           Queue Management

@@ -3,6 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Column = {
   key: string;
@@ -63,7 +64,7 @@ export default function DataTable({
 }: Props) {
   if (loading) {
     return (
-      <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
         <div className="flex items-center justify-between">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-10 w-24" />
@@ -157,10 +158,11 @@ export default function DataTable({
 
           <tbody>
             {data.length > 0 ? (
-              data.map((row) => (
+              data.map((row, rowIndex) => (
                 <tr
                   key={row.id}
-                  className="border-b hover:bg-muted/30"
+                  className="border-b hover:bg-muted/30 transition-colors animate-fade-in-up"
+                  style={{ animationDelay: `${rowIndex * 30}ms` }}
                 >
                   {columns.map(
                     (
@@ -237,36 +239,26 @@ export default function DataTable({
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
+            className="h-8 w-8"
             disabled={page === 1}
-            onClick={() =>
-              onPageChange(
-                page - 1
-              )
-            }
+            onClick={() => onPageChange(page - 1)}
           >
-            Previous
+            <ChevronLeft className="h-4 w-4 text-emerald-400" />
           </Button>
 
-          <span className="text-sm">
-            Page {page} of{" "}
-            {totalPages}
+          <span className="text-sm text-muted-foreground">
+            {page} / {totalPages}
           </span>
 
           <Button
             variant="outline"
-            size="sm"
-            disabled={
-              page ===
-              totalPages
-            }
-            onClick={() =>
-              onPageChange(
-                page + 1
-              )
-            }
+            size="icon"
+            className="h-8 w-8"
+            disabled={page === totalPages}
+            onClick={() => onPageChange(page + 1)}
           >
-            Next
+            <ChevronRight className="h-4 w-4 text-emerald-400" />
           </Button>
         </div>
       </div>

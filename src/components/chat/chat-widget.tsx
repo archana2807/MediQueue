@@ -27,6 +27,12 @@ export default function ChatWidget() {
     w-14
     rounded-full
     shadow-lg
+    animate-bounce-in
+    hover:animate-float
+    transition-shadow
+    duration-300
+    hover:shadow-xl
+    hover:shadow-primary/20
   "
 >
   <MessageCircle className="h-6 w-6" />

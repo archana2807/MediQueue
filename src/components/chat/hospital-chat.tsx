@@ -106,7 +106,7 @@ export default function HospitalChat() {
                 msg.role === "user"
                   ? "justify-end"
                   : "justify-start"
-              }`}
+              } animate-fade-in-up`}
             >
               <div
                 className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${

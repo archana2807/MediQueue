@@ -19,7 +19,7 @@ export default async function DoctorsPage() {
   // const doctors = await getDoctors();
 
   return (
-    <Card>
+    <Card className="animate-fade-in">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>
           Doctors Management

@@ -23,7 +23,7 @@ export default async function PatientHistoryPage({
   const history =
     await getPatientHistory(id);
 console.log("history",history);  return (
-    <div className="container mx-auto max-w-8xl p-6">
+    <div className="container mx-auto max-w-8xl p-6 animate-fade-in">
       <div className="mb-8 flex items-center justify-between">
   <div>
     <h1 className="text-3xl font-bold">
@@ -47,10 +47,11 @@ console.log("history",history);  return (
 
       <div className="space-y-6">
         {history.map(
-          (visit: any) => (
+          (visit: any, index: number) => (
             <Card
               key={visit.id}
-              className="shadow-sm"
+              className="shadow-sm animate-fade-in-up"
+              style={{ animationDelay: `${index * 80}ms` }}
             >
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -60,7 +61,7 @@ console.log("history",history);  return (
                     ).toLocaleDateString()}
                   </CardTitle>
 
-                  <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                  <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
                     {visit.status}
                   </span>
                 </div>
@@ -77,7 +78,7 @@ console.log("history",history);  return (
                   </p>
                 </div>
 
-                <div className="rounded-lg border bg-slate-50 p-4">
+                <div className="rounded-lg border bg-muted p-4">
                   <h3 className="mb-3 font-semibold">
                     AI Clinical Summary
                   </h3>

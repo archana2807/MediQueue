@@ -67,7 +67,7 @@ const role =
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="data-[state=open]:bg-white/5 data-[state=open]:text-white"
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage
@@ -88,7 +88,7 @@ const role =
     {user.email}
   </span> */}
 
-  <span className="text-xs text-primary">
+  <span className="text-xs text-emerald-400">
     {role}
   </span>
 </div>
@@ -159,7 +159,7 @@ const role =
 
             <DropdownMenuItem
               onClick={handleLogout}
-              className="cursor-pointer text-red-600"
+              className="cursor-pointer text-red-400"
             >
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>

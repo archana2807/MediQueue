@@ -33,7 +33,7 @@ export default async function EditAppointmentPage({
 
   return (
 
-     <Card >
+     <Card className="animate-fade-in">
       <CardHeader>
         <CardTitle>
           Create Appointment

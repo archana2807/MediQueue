@@ -13,7 +13,7 @@ import {
 
 export default function AppointmentsPage() {
   return (
-    <Card>
+    <Card className="animate-fade-in">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>
           Appointments

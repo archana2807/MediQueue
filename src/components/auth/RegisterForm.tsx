@@ -91,7 +91,7 @@ return ( <Card className="w-full max-w-md shadow-lg"> <CardHeader> <CardTitle>Cr
   Enter your information below to create your account.
 </CardDescription>
 
-<FieldDescription className="mt-2 text-blue-600">
+<FieldDescription className="mt-2 text-emerald-400">
   Patient registration only. Doctors and administrators are created by the hospital administration.
 </FieldDescription>
   </CardHeader>
@@ -109,7 +109,7 @@ return ( <Card className="w-full max-w-md shadow-lg"> <CardHeader> <CardTitle>Cr
           />
 
           {errors.name && (
-            <FieldDescription className="text-red-500">
+            <FieldDescription className="text-red-400">
               {errors.name.message}
             </FieldDescription>
           )}
@@ -126,7 +126,7 @@ return ( <Card className="w-full max-w-md shadow-lg"> <CardHeader> <CardTitle>Cr
           />
 
           {errors.email && (
-            <FieldDescription className="text-red-500">
+            <FieldDescription className="text-red-400">
               {errors.email.message}
             </FieldDescription>
           )}
@@ -156,7 +156,7 @@ return ( <Card className="w-full max-w-md shadow-lg"> <CardHeader> <CardTitle>Cr
           </FieldDescription>
 
           {errors.password && (
-            <FieldDescription className="text-red-500">
+            <FieldDescription className="text-red-400">
               {errors.password.message}
             </FieldDescription>
           )}

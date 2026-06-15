@@ -1,14 +1,10 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
-
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Pencil } from "lucide-react";
 
 import DeleteDoctorButton from "./delete-doctor-button";
-
 import DataTable from "@/components/common/data-table";
 import { Button } from "@/components/ui/button";
 
@@ -20,59 +16,31 @@ type Doctor = {
 };
 
 export default function DoctorsTable() {
-  const [doctors, setDoctors] =
-    useState<Doctor[]>([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [search, setSearch] =
-    useState("");
-
-  const [page, setPage] =
-    useState(1);
-
-  const [pageSize, setPageSize] =
-    useState(2);
-
-  const [total, setTotal] =
-    useState(0);
-
-  const [totalPages, setTotalPages] =
-    useState(1);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchDoctors();
     }, 300);
-
-    return () =>
-      clearTimeout(timer);
+    return () => clearTimeout(timer);
   }, [page, pageSize, search]);
 
   async function fetchDoctors() {
     try {
       setLoading(true);
-
-      const response =
-        await fetch(
-          `/api/doctors?page=${page}&limit=${pageSize}&search=${search}`
-        );
-
-      const result =
-        await response.json();
-
-      setDoctors(
-        result.data || []
+      const response = await fetch(
+        `/api/doctors?page=${page}&limit=${pageSize}&search=${search}`
       );
-
-      setTotal(
-        result.total || 0
-      );
-
-      setTotalPages(
-        result.totalPages || 1
-      );
+      const result = await response.json();
+      setDoctors(result.data || []);
+      setTotal(result.total || 0);
+      setTotalPages(result.totalPages || 1);
     } catch (error) {
       console.error(error);
     } finally {
@@ -89,51 +57,33 @@ export default function DoctorsTable() {
       page={page}
       pageSize={pageSize}
       search={search}
-      onSearchChange={(
-        value
-      ) => {
+      onSearchChange={(value) => {
         setSearch(value);
         setPage(1);
       }}
       onPageChange={setPage}
-      onPageSizeChange={(
-        size
-      ) => {
+      onPageSizeChange={(size) => {
         setPageSize(size);
         setPage(1);
       }}
       columns={[
-        {
-          key: "name",
-          label: "Doctor Name",
-        },
-        {
-          key: "specialization",
-          label: "Specialization",
-        },
-        {
-          key: "email",
-          label: "Email",
-        },
+        { key: "name", label: "Doctor Name" },
+        { key: "specialization", label: "Specialization" },
+        { key: "email", label: "Email" },
       ]}
       actions={(doctor) => (
-        <div className="flex gap-2">
-          <Link
-            href={`/doctors/${doctor.id}/edit`}
-          >
+        <div className="flex items-center gap-1">
+          <Link href={`/doctors/${doctor.id}/edit`}>
             <Button
-              size="sm"
-              variant="outline"
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 hover:bg-emerald-500/10"
+              title="Edit Doctor"
             >
-              Edit
+              <Pencil className="h-4 w-4 text-emerald-400" />
             </Button>
           </Link>
-
-          <DeleteDoctorButton
-            id={doctor.id}
-              onSuccess={fetchDoctors}
-
-          />
+          <DeleteDoctorButton id={doctor.id} onSuccess={fetchDoctors} />
         </div>
       )}
     />
