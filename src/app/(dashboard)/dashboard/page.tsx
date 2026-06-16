@@ -1,3 +1,6 @@
+
+export const dynamic =
+  "force-dynamic";
 import DashboardCounts from "@/components/dashboard/dashboard-counts";
 import RecentAppointmentsTable from "@/components/dashboard/recent-appointments-card";
 

@@ -126,6 +126,8 @@ export default function AppointmentForm({
 }: AppointmentFormProps) {
   const router = useRouter();
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [slots, setSlots] =
+  useState<string[]>([]);
   const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [patientId, setPatientId] = useState<string | undefined>(
     initialData?.patient_id
@@ -150,19 +152,38 @@ export default function AppointmentForm({
       patient_phone: "",
       doctor_id: "",
       appointment_date: "",
+        appointment_time: "",
+
       status: "PENDING",
     },
   });
 
+  const selectedDoctor =
+  watch("doctor_id");
+
+const selectedDate =
+  watch("appointment_date");
+
   useEffect(() => {
     if (!initialData) return;
+    const currentTime =
+    new Date(
+      initialData.appointment_date
+    )
+      .toTimeString()
+      .slice(0, 5);
     reset({
       doctor_id: initialData.doctor_id,
-      appointment_date: new Date(initialData.appointment_date)
-        .toISOString()
-        .slice(0, 16),
+      appointment_date: new Date(
+  initialData.appointment_date
+)
+  .toISOString()
+        .slice(0, 10),
+      appointment_time: currentTime,
       status: initialData.status as "PENDING" | "CONFIRMED" | "COMPLETED",
     });
+      setSlots([currentTime]);
+
     setPatientId(initialData.patient_id);
     setValue("patient_name", initialData.patient_name ?? "");
     setValue("patient_phone", initialData.patient_phone ?? "");
@@ -171,6 +192,45 @@ export default function AppointmentForm({
   useEffect(() => {
     loadDoctors();
   }, []);
+  useEffect(() => {
+  if (
+    !selectedDoctor ||
+    !selectedDate
+  ) {
+    return;
+  }
+
+  loadSlots(
+    selectedDoctor,
+    selectedDate
+  );
+}, [
+  selectedDoctor,
+  selectedDate,
+  ]);
+  
+  useEffect(() => {
+  if (
+    !selectedDoctor ||
+    !selectedDate
+  ) {
+    return;
+  }
+
+  const interval =
+    setInterval(() => {
+      loadSlots(
+        selectedDoctor,
+        selectedDate
+      );
+    }, 15000);
+
+  return () =>
+    clearInterval(interval);
+}, [
+  selectedDoctor,
+  selectedDate,
+]);
 
   useEffect(() => {
     if (isPatient && user) {
@@ -199,15 +259,56 @@ export default function AppointmentForm({
       setLoadingDoctors(false);
     }
   }
+  const loadSlots = async (
+  doctorId: string,
+  date: string
+) => {
+  try {
+    const response =
+      await fetch(
+        `/api/appointments/availability?doctorId=${doctorId}&date=${date}`
+      );
+const selectedTime =
+  watch("appointment_time");
+    const result =
+  await response.json();
+
+let available =
+  result.availableSlots || [];
+
+if (
+  selectedTime &&
+  !available.includes(selectedTime)
+) {
+  available.unshift(
+    selectedTime
+  );
+}
+
+setSlots(available);
+
+   
+  } catch (error) {
+    console.error(
+      "Slot Load Error:",
+      error
+    );
+  }
+};
 
   const onSubmit = async (data: AppointmentFormData) => {
     try {
+
+      const appointmentDateTime =
+        `${data.appointment_date} ${data.appointment_time}:00`;
+      
       const payload = {
         patient_id: patientId ?? null,
         patient_name: data.patient_name,
         patient_phone: data.patient_phone,
         doctor_id: data.doctor_id,
-        appointment_date: data.appointment_date,
+       appointment_date:
+  appointmentDateTime,
         status: data.status,
       };
 
@@ -230,6 +331,10 @@ export default function AppointmentForm({
       toast.success(
         isEdit ? "Appointment updated successfully" : "Appointment created successfully"
       );
+      await loadSlots(
+  data.doctor_id,
+  data.appointment_date
+);
       router.push("/appointments");
       router.refresh();
     } catch (error) {
@@ -309,7 +414,7 @@ export default function AppointmentForm({
           <h3 className="text-sm font-semibold">Appointment Details</h3>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+       <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">
               Select Doctor
@@ -334,21 +439,50 @@ export default function AppointmentForm({
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">
-              Date & Time
-            </label>
-            <Input
-              type="datetime-local"
-              {...register("appointment_date")}
-              className="h-10 bg-background/50"
-            />
-            {errors.appointment_date && (
-              <p className="text-xs text-red-400">
-                {errors.appointment_date.message}
-              </p>
-            )}
+         <div className="space-y-1.5">
+  <label className="text-xs font-medium text-muted-foreground">
+    Appointment Date
+  </label>
+
+  <Input
+    type="date"
+    {...register(
+      "appointment_date"
+    )}
+    className="h-10 bg-background/50"
+  />
           </div>
+
+          <div className="space-y-1.5">
+  <label className="text-xs font-medium text-muted-foreground">
+    Available Slot
+  </label>
+
+ <select
+  className="w-full h-10 rounded-md border bg-background px-3"
+  {...register("appointment_time")}
+>
+  <option value="">
+    Select Slot
+  </option>
+
+  {slots.map((slot) => (
+    <option
+      key={slot}
+      value={slot}
+    >
+      {slot}
+    </option>
+  ))}
+</select>
+
+{errors.appointment_time && (
+  <p className="text-xs text-red-400">
+    {errors.appointment_time.message}
+  </p>
+)}
+</div>
+          
         </div>
       </div>
 

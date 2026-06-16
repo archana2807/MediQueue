@@ -72,7 +72,12 @@ export const appointmentSchema =
       .min(
         2,
         "Patient name is required"
-      ),
+    ),
+    appointment_time:
+  z.string().min(
+    1,
+    "Please select a slot"
+  ),
 
     patient_phone: z
       .string()
