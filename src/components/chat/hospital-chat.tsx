@@ -85,17 +85,7 @@ export default function HospitalChat() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b p-4">
-        <h1 className="text-xl font-semibold">
-          MediQueue AI Assistant
-        </h1>
-
-        <p className="text-sm text-muted-foreground">
-          Ask about appointments,
-          doctors, reports, diet,
-          emergency services and more.
-        </p>
-      </div>
+      
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
         {messages.map(
