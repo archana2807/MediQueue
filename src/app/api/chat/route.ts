@@ -3,7 +3,6 @@ import {
   NextResponse,
 } from "next/server";
 
-import { generateText } from "ai";
 
 import { openrouter } from "@/lib/openrouter";
 
@@ -17,18 +16,29 @@ import {
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import OpenAI from "openai";
 
+const openai = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
 
 
 async function detectIntent(
   message: string
 ) {
-  const { text } =
-    await generateText({
-      model: openrouter(
-        "google/gemma-3-27b-it"
-      ),
-      prompt: `
+  const response =
+  await openai.chat.completions.create({
+    model: "openai/gpt-oss-120b:free",
+
+    temperature: 0,
+
+    max_tokens: 20,
+
+    messages: [
+      {
+        role: "user",
+        content: `
 Classify the user query.
 
 Return ONLY one value:
@@ -43,9 +53,14 @@ HISTORY
 Query:
 ${message}
 `,
-    });
+      },
+    ],
+  });
 
-  return text.trim();
+return (
+  response.choices?.[0]
+    ?.message?.content || "FAQ"
+).trim();
 }
 
 async function handleFAQ(
@@ -64,13 +79,18 @@ async function handleFAQ(
       )
       .join("\n\n");
 
-  const { text } =
-    await generateText({
-      model: openrouter(
-        "google/gemma-3-27b-it"
-      ),
+ const response =
+  await openai.chat.completions.create({
+    model: "openai/gpt-oss-120b:free",
 
-      prompt: `
+    temperature: 0.2,
+
+    max_tokens: 800,
+
+    messages: [
+      {
+        role: "user",
+        content: `
 You are MediQueue Hospital Assistant.
 
 Answer ONLY using the provided context.
@@ -85,9 +105,15 @@ ${context}
 Question:
 ${message}
 `,
-    });
+      },
+    ],
+  });
 
-  return text;
+return (
+  response.choices?.[0]
+    ?.message?.content ||
+  "I don't have that information."
+  );
 }
 
 export async function POST(

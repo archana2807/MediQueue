@@ -306,3 +306,20 @@ export async function deleteAppointment(
 
   return true;
 }
+
+export async function getDoctorAppointments(
+  doctorId: string,
+  date: string
+) {
+  const result = await pool.query(
+    `
+    SELECT appointment_date
+    FROM appointments
+    WHERE doctor_id = $1
+    AND DATE(appointment_date) = DATE($2)
+    `,
+    [doctorId, date]
+  );
+
+  return result.rows;
+}

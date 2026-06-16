@@ -1,80 +1,10 @@
-// import { NextResponse }
-//   from "next/server";
-
-// import { ai }
-//   from "@/lib/gemini";
-
-// export async function POST(
-//   request: Request
-// ) {
-//   try {
-//     const { notes } =
-//       await request.json();
-
-//     if (!notes) {
-//       return NextResponse.json(
-//         {
-//           success: false,
-//           message:
-//             "Doctor notes are required",
-//         },
-//         {
-//           status: 400,
-//         }
-//       );
-//     }
-
-//     const response =
-//   await ai.models.generateContent({
-//     model: "gemini-2.0-flash-lite",
-
-//     contents: `
-// You are a medical assistant.
-
-// Analyze doctor notes and generate:
-
-// Symptoms
-// Medication
-// Advice
-// Diet Recommendation
-
-// Rules:
-// - Advice should be automatically generated based on the condition.
-// - Diet recommendation should be appropriate for the condition.
-// - Keep each section short.
-// - Do not mention that advice was AI generated.
-
-// Doctor Notes:
-// ${notes}
-// `,
-//   });
-
-//     return NextResponse.json({
-//       success: true,
-//       summary:
-//         response.text,
-//     });
-//   } catch (error) {
-//     console.error(error);
-
-//     return NextResponse.json(
-//       {
-//         success: false,
-//         message:
-//           "Failed to generate AI summary",
-//       },
-//       {
-//         status: 500,
-//       }
-//     );
-//   }
-// }
-
-
 import { NextResponse } from "next/server";
-import { generateText } from "ai";
+import OpenAI from "openai";
 
-import { openrouter } from "@/lib/openrouter";
+const openai = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
 
 export async function POST(
   request: Request
@@ -96,20 +26,28 @@ export async function POST(
       );
     }
 
-    const { text } =
-      await generateText({
-        model: openrouter(
-          "openai/gpt-4o-mini",
-        ),
+   const response =
+  await openai.chat.completions.create({
+    model: "openai/gpt-oss-120b:free",
 
-        prompt: `
+    temperature: 0.3,
+
+    max_tokens: 800,
+
+    messages: [
+      {
+        role: "user",
+        content: `
 You are a medical assistant.
 
 Analyze doctor notes and generate:
 
 Symptoms
+
 Medication
+
 Advice
+
 Diet Recommendation
 
 Rules:
@@ -117,18 +55,33 @@ Rules:
 - Diet recommendation should be appropriate for the condition.
 - Keep each section short.
 - Do not mention AI.
+- Use markdown headings.
+- Use bullet points.
+- Do not use tables.
 
 Doctor Notes:
+
 ${notes}
 `,
-      });
+      },
+    ],
+  });
+
+const summary =
+  response.choices?.[0]?.message?.content ||
+  "Unable to generate summary.";
+
+   
 
     return NextResponse.json({
       success: true,
-      summary: text,
+      summary,
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "SUMMARY ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {

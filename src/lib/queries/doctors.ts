@@ -200,3 +200,21 @@ export async function findDoctor(
 
   return result.rows[0];
 }
+
+export async function getDoctorWorkload(
+  doctorId: string,
+  date: string
+) {
+  const result = await pool.query(
+    `
+    SELECT COUNT(*) as total
+    FROM appointments
+    WHERE doctor_id = $1
+    AND DATE(appointment_date) = DATE($2)
+    `,
+    [doctorId, date]
+  );
+
+  return Number(result.rows[0].total);
+}
+

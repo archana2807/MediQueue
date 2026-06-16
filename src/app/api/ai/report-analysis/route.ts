@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
-import { generateText } from "ai";
+
 import PDFParser from "pdf2json";
 
-import { openrouter } from "@/lib/openrouter";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
 
 export async function POST(
   request: Request
@@ -217,36 +222,96 @@ The file may be scanned or image-based.
 `;
     }
 
-    const { text } =
-      await generateText({
-        model: openrouter(
-          "google/gemma-3-27b-it"
-        ),
+    const response =
+  await openai.chat.completions.create({
+    model: "openai/gpt-oss-120b:free",
 
-        prompt: `
-You are a medical assistant.
+    temperature: 0.1,
 
-Analyze this medical report.
+    max_tokens: 1200,
 
-Return ONLY:
+    messages: [
+      {
+        role: "system",
+        content: `
+You are an expert AI Medical Report Analyzer.
 
-Key Findings
-Abnormal Results
-Potential Risks
-Recommendations
+Analyze medical reports and laboratory reports.
 
+Return CLEAN MARKDOWN ONLY.
+
+IMPORTANT:
+- Do NOT use tables.
+- Do NOT use HTML.
+- Do NOT use code blocks.
+- Use headings and bullet points only.
+- Keep explanations simple for patients.
+- Highlight abnormal values using ⚠️.
+- Mention normal findings when relevant.
+- Never provide a diagnosis.
+- Never prescribe medication.
+- Recommend consulting a healthcare professional when appropriate.
+
+Return EXACTLY in this structure:
+
+# Medical Report Summary
+
+## Key Findings
+
+- Finding 1
+- Finding 2
+
+## Abnormal Results
+
+- ⚠️ Test Name: Value (Normal Range)
+
+## Potential Risks
+
+- Risk 1
+- Risk 2
+
+## Simplified Explanation
+
+- Point 1
+- Point 2
+- Point 3
+
+## Recommendations
+
+- Recommendation 1
+- Recommendation 2
+- Recommendation 3
+
+Formatting Rules:
+- Use short bullet points.
+- Avoid long paragraphs.
+- Avoid medical jargon where possible.
+- Maximum 500 words.
+        `,
+      },
+      {
+        role: "user",
+        content: `
 Report Name:
 ${reportName}
 
 Report Content:
 ${reportContent}
-`,
-      });
+        `,
+      },
+    ],
+  });
 
-    return NextResponse.json({
-      success: true,
-      analysis: text,
-    });
+const analysis =
+  response.choices?.[0]?.message?.content ||
+  "Unable to analyze report.";
+
+
+
+   return NextResponse.json({
+  success: true,
+  analysis,
+});
   } catch (error) {
     console.error(
       "Report Analysis Error:",
