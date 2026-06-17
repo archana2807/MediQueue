@@ -29,7 +29,7 @@ export async function handleDoctorSearch(
     doctors
       .map(
         (d) =>
-          `${d.name} - ${d.specialization}`
+          `${d.name} - ${d.specialization.toUpperCase()}`
       )
       .join("\n");
 
@@ -144,7 +144,7 @@ No doctors currently available.
 
   return `
 Recommended Department:
-${specialization}
+${specialization.toUpperCase()}
 
 Available Doctors:
 

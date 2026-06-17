@@ -29,7 +29,7 @@ export async function getDashboardData() {
     pool.query(`
       SELECT COUNT(*)::int AS count
       FROM appointments
-      WHERE status IN ('CONFIRMED','IN_PROGRESS')
+      WHERE status IN ('CHECKED_IN','WAITING','IN_PROGRESS')
     `),
 
     pool.query(`

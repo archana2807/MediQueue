@@ -35,6 +35,12 @@ export function getStatusClass(
     case "CONFIRMED":
       return "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-950/50 dark:text-teal-400 dark:border-teal-800";
 
+    case "CHECKED_IN":
+      return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800";
+
+    case "WAITING":
+      return "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-800";
+
     case "IN_PROGRESS":
       return "bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-950/50 dark:text-cyan-400 dark:border-cyan-800";
 

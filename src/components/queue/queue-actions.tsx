@@ -52,14 +52,48 @@ export default function QueueActions({
           size="icon"
           variant="ghost"
           disabled={loading}
+          onClick={() => updateStatus("CHECKED_IN")}
+          className="h-8 w-8 hover:bg-blue-500/10"
+          title="Check In Patient"
+        >
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
+          ) : (
+            <Phone className="h-4 w-4 text-blue-400" />
+          )}
+        </Button>
+      )}
+
+      {status === "CHECKED_IN" && (
+        <Button
+          size="icon"
+          variant="ghost"
+          disabled={loading}
+          onClick={() => updateStatus("WAITING")}
+          className="h-8 w-8 hover:bg-violet-500/10"
+          title="Move to Waiting"
+        >
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin text-violet-400" />
+          ) : (
+            <Phone className="h-4 w-4 text-violet-400" />
+          )}
+        </Button>
+      )}
+
+      {status === "WAITING" && (
+        <Button
+          size="icon"
+          variant="ghost"
+          disabled={loading}
           onClick={() => updateStatus("IN_PROGRESS")}
-          className="h-8 w-8 hover:bg-teal-500/10"
+          className="h-8 w-8 hover:bg-cyan-500/10"
           title="Call Patient"
         >
           {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin text-teal-400" />
+            <Loader2 className="h-4 w-4 animate-spin text-cyan-400" />
           ) : (
-            <Phone className="h-4 w-4 text-teal-400" />
+            <Phone className="h-4 w-4 text-cyan-400" />
           )}
         </Button>
       )}

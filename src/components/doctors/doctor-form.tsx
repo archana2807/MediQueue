@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,12 +7,12 @@ import { toast } from "sonner";
 import {
   User,
   Mail,
-  Phone,
   Lock,
   Save,
   ArrowLeft,
   Loader2,
   BadgeCheck,
+  ChevronDown,
 } from "lucide-react";
 
 import {
@@ -24,6 +23,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+const SPECIALIZATIONS = [
+  "Cardiology",
+  "ENT",
+  "Orthopedics",
+  "Dermatology",
+  "Pediatrics",
+  "Gynecology",
+  "General Medicine",
+  "Ophthalmology",
+  "Cancer",
+];
 
 type DoctorFormProps = {
   initialData?: {
@@ -126,11 +137,20 @@ export default function DoctorForm({
             <label className="text-xs font-medium text-muted-foreground">
               Specialization <span className="text-red-400">*</span>
             </label>
-            <Input
-              {...register("specialization")}
-              placeholder="Cardiology"
-              className="h-10 bg-background/50"
-            />
+            <div className="relative">
+              <select
+                {...register("specialization")}
+                className="flex h-10 w-full items-center justify-between rounded-lg border border-border/60 bg-background/50 px-3 pr-8 text-sm transition-colors hover:bg-background/80 focus:border-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 appearance-none"
+              >
+                <option value="">Select Specialization</option>
+                {SPECIALIZATIONS.map((spec) => (
+                  <option key={spec} value={spec}>
+                    {spec.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            </div>
             {errors.specialization && (
               <p className="text-xs text-red-400">{errors.specialization.message}</p>
             )}

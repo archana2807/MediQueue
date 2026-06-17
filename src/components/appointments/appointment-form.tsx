@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import {
   CalendarDays,
   User,
-  Stethoscope,
   ClipboardCheck,
   Save,
   ArrowLeft,
@@ -17,6 +16,10 @@ import {
   CircleDot,
   CheckCircle2,
   Clock,
+  Sparkles,
+  AlertTriangle,
+  Loader2,
+  Brain,
 } from "lucide-react";
 
 import {
@@ -34,11 +37,34 @@ import { Badge } from "@/components/ui/badge";
 type Doctor = {
   id: string;
   name: string;
+  specialization: string;
+};
+
+type DepartmentDoctor = {
+  id: string;
+  name: string;
+  specialization: string;
+  currentLoad: number;
+  estimatedWait: number;
+};
+
+type AiRecommendation = {
+  department: string;
+  recommendedDoctor: {
+    id: string;
+    name: string;
+    currentLoad: number;
+    estimatedWait: number;
+    reason: string;
+  };
+  departmentDoctors: DepartmentDoctor[];
 };
 
 const STATUS_OPTIONS = [
   { value: "PENDING", label: "Pending", icon: Clock, color: "text-amber-400" },
   { value: "CONFIRMED", label: "Confirmed", icon: CircleDot, color: "text-teal-400" },
+  { value: "CHECKED_IN", label: "Checked In", icon: ClipboardCheck, color: "text-blue-400" },
+  { value: "WAITING", label: "Waiting", icon: Clock, color: "text-violet-400" },
   { value: "COMPLETED", label: "Completed", icon: CheckCircle2, color: "text-emerald-400" },
 ];
 
@@ -125,17 +151,22 @@ export default function AppointmentForm({
   initialData,
 }: AppointmentFormProps) {
   const router = useRouter();
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [slots, setSlots] =
-  useState<string[]>([]);
+  const [allDoctors, setAllDoctors] = useState<Doctor[]>([]);
+  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
+  const [slots, setSlots] = useState<string[]>([]);
   const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [patientId, setPatientId] = useState<string | undefined>(
     initialData?.patient_id
   );
 
+  const [symptoms, setSymptoms] = useState("");
+  const [aiRecommendation, setAiRecommendation] = useState<AiRecommendation | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
   const { data: session } = useSession();
-  const user = session?.user;
-  const isPatient = (user as any)?.role === "PATIENT";
+  const user = session?.user as { id?: string; name?: string; phone?: string; role?: string } | undefined;
+  const isPatient = user?.role === "PATIENT";
   const isEdit = !!appointmentId;
 
   const {
@@ -152,38 +183,28 @@ export default function AppointmentForm({
       patient_phone: "",
       doctor_id: "",
       appointment_date: "",
-        appointment_time: "",
-
+      appointment_time: "",
       status: "PENDING",
     },
   });
 
-  const selectedDoctor =
-  watch("doctor_id");
-
-const selectedDate =
-  watch("appointment_date");
+  const selectedDoctor = watch("doctor_id");
+  const selectedDate = watch("appointment_date");
 
   useEffect(() => {
     if (!initialData) return;
-    const currentTime =
-    new Date(
-      initialData.appointment_date
-    )
+    const currentTime = new Date(initialData.appointment_date)
       .toTimeString()
       .slice(0, 5);
     reset({
       doctor_id: initialData.doctor_id,
-      appointment_date: new Date(
-  initialData.appointment_date
-)
-  .toISOString()
+      appointment_date: new Date(initialData.appointment_date)
+        .toISOString()
         .slice(0, 10),
       appointment_time: currentTime,
-      status: initialData.status as "PENDING" | "CONFIRMED" | "COMPLETED",
+      status: initialData.status as "PENDING" | "CONFIRMED" | "CHECKED_IN" | "WAITING" | "COMPLETED",
     });
-      setSlots([currentTime]);
-
+    setSlots([currentTime]);
     setPatientId(initialData.patient_id);
     setValue("patient_name", initialData.patient_name ?? "");
     setValue("patient_phone", initialData.patient_phone ?? "");
@@ -192,53 +213,27 @@ const selectedDate =
   useEffect(() => {
     loadDoctors();
   }, []);
-  useEffect(() => {
-  if (
-    !selectedDoctor ||
-    !selectedDate
-  ) {
-    return;
-  }
 
-  loadSlots(
-    selectedDoctor,
-    selectedDate
-  );
-}, [
-  selectedDoctor,
-  selectedDate,
-  ]);
-  
   useEffect(() => {
-  if (
-    !selectedDoctor ||
-    !selectedDate
-  ) {
-    return;
-  }
+    if (!selectedDoctor || !selectedDate) return;
+    loadSlots(selectedDoctor, selectedDate);
+  }, [selectedDoctor, selectedDate]);
 
-  const interval =
-    setInterval(() => {
-      loadSlots(
-        selectedDoctor,
-        selectedDate
-      );
+  useEffect(() => {
+    if (!selectedDoctor || !selectedDate) return;
+    const interval = setInterval(() => {
+      loadSlots(selectedDoctor, selectedDate);
     }, 15000);
-
-  return () =>
-    clearInterval(interval);
-}, [
-  selectedDoctor,
-  selectedDate,
-]);
+    return () => clearInterval(interval);
+  }, [selectedDoctor, selectedDate]);
 
   useEffect(() => {
     if (isPatient && user) {
-      setPatientId((user as any).id);
+      setPatientId(user.id);
       setValue("patient_name", user.name || "");
-      setValue("patient_phone", (user as any).phone || "");
+      setValue("patient_phone", user.phone || "");
     }
-  }, [isPatient, user]);
+  }, [isPatient, user, setValue]);
 
   useEffect(() => {
     if (isPatient && !appointmentId) {
@@ -246,12 +241,31 @@ const selectedDate =
     }
   }, [isPatient, appointmentId, setValue]);
 
+  useEffect(() => {
+  if (aiRecommendation) {
+    setFilteredDoctors(
+      aiRecommendation.departmentDoctors.map(
+        (doctor) => ({
+          id: doctor.id,
+          name: doctor.name,
+          specialization:
+            doctor.specialization,
+        })
+      )
+    );
+  } else {
+    setFilteredDoctors(allDoctors);
+  }
+}, [aiRecommendation, allDoctors]);
+
   async function loadDoctors() {
     try {
       setLoadingDoctors(true);
       const response = await fetch("/api/doctors");
       const result = await response.json();
-      setDoctors(result.data || []);
+      const doctorData = result.data || [];
+      setAllDoctors(doctorData);
+      setFilteredDoctors(doctorData);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load doctors");
@@ -259,56 +273,122 @@ const selectedDate =
       setLoadingDoctors(false);
     }
   }
-  const loadSlots = async (
-  doctorId: string,
-  date: string
-) => {
-  try {
-    const response =
-      await fetch(
+
+  const loadSlots = async (doctorId: string, date: string) => {
+    try {
+      const response = await fetch(
         `/api/appointments/availability?doctorId=${doctorId}&date=${date}`
       );
-const selectedTime =
-  watch("appointment_time");
-    const result =
-  await response.json();
+      const selectedTime = watch("appointment_time");
+      const result = await response.json();
+      const availableSlots = result.availableSlots || [];
+      const available = selectedTime && !availableSlots.includes(selectedTime)
+        ? [selectedTime, ...availableSlots]
+        : availableSlots;
+      setSlots(available);
+    } catch (error) {
+      console.error("Slot Load Error:", error);
+    }
+  };
 
-let available =
-  result.availableSlots || [];
+  const analyzeSymptoms = useCallback(async () => {
+    if (!symptoms.trim()) {
+      toast.error("Please enter symptoms first");
+      return;
+    }
 
-if (
-  selectedTime &&
-  !available.includes(selectedTime)
-) {
-  available.unshift(
-    selectedTime
+    setAnalyzing(true);
+    setAiError(null);
+
+    try {
+      const response = await fetch("/api/ai/analyze-symptoms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symptoms }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setAiError(result.message || "Failed to analyze symptoms");
+        toast.error(result.message || "Failed to analyze symptoms");
+        return;
+      }
+
+      setAiRecommendation(result.data);
+      setValue("doctor_id", result.data.recommendedDoctor.id, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      toast.success("AI recommendation ready");
+    } catch (error) {
+      console.error(error);
+      setAiError("Failed to analyze symptoms");
+      toast.error("Failed to analyze symptoms");
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [symptoms, setValue]);
+
+  const clearRecommendation = useCallback(() => {
+    setAiRecommendation(null);
+    setSymptoms("");
+    setAiError(null);
+    setFilteredDoctors(allDoctors);
+  }, [allDoctors]);
+
+  const getWorkloadComparison = useCallback(
+    (currentDoctorId: string) => {
+      if (!aiRecommendation) return null;
+
+      const recommended = aiRecommendation.recommendedDoctor;
+      if (recommended.id === currentDoctorId) return null;
+
+      const currentDoctor = allDoctors.find((d) => d.id === currentDoctorId);
+      const deptDoc = aiRecommendation.departmentDoctors.find(
+        (d) => d.id === currentDoctorId
+      );
+
+      if (!currentDoctor) return null;
+
+      return {
+        selectedDoctor: {
+          name: currentDoctor.name,
+          currentLoad: deptDoc?.currentLoad ?? 0,
+          estimatedWait: deptDoc?.estimatedWait ?? 0,
+        },
+        recommendedDoctor: {
+          name: recommended.name,
+          currentLoad: recommended.currentLoad,
+          estimatedWait: recommended.estimatedWait,
+          reason: recommended.reason,
+        },
+      };
+    },
+    [aiRecommendation, allDoctors]
   );
-}
 
-setSlots(available);
+  const workloadComparison = getWorkloadComparison(selectedDoctor);
 
-   
-  } catch (error) {
-    console.error(
-      "Slot Load Error:",
-      error
-    );
-  }
-};
+  const doctorOptions = filteredDoctors.map((doctor) => ({
+    value: doctor.id,
+    label:
+      aiRecommendation?.recommendedDoctor.id === doctor.id
+        ? `${doctor.name} (Recommended)`
+        : doctor.name,
+  }));
 
   const onSubmit = async (data: AppointmentFormData) => {
     try {
+      const appointmentDateTime = `${data.appointment_date} ${data.appointment_time}:00`;
 
-      const appointmentDateTime =
-        `${data.appointment_date} ${data.appointment_time}:00`;
-      
       const payload = {
         patient_id: patientId ?? null,
         patient_name: data.patient_name,
         patient_phone: data.patient_phone,
         doctor_id: data.doctor_id,
-       appointment_date:
-  appointmentDateTime,
+        appointment_date: appointmentDateTime,
         status: data.status,
       };
 
@@ -331,10 +411,7 @@ setSlots(available);
       toast.success(
         isEdit ? "Appointment updated successfully" : "Appointment created successfully"
       );
-      await loadSlots(
-  data.doctor_id,
-  data.appointment_date
-);
+      await loadSlots(data.doctor_id, data.appointment_date);
       router.push("/appointments");
       router.refresh();
     } catch (error) {
@@ -405,8 +482,108 @@ setSlots(available);
         </div>
       </div>
 
-      {/* Appointment Details */}
+      {/* Symptoms & AI Recommendation */}
       <div className="rounded-xl border bg-card p-5 shadow-sm animate-fade-in-up stagger-2">
+        <div className="mb-4 flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10">
+            <Brain className="h-4 w-4 text-violet-400" />
+          </div>
+          <h3 className="text-sm font-semibold">Symptoms & AI Recommendation</h3>
+          {aiRecommendation && (
+            <Badge variant="outline" className="ml-auto border-violet-500/30 bg-violet-500/10 text-violet-400 text-[10px]">
+              AI Analyzed
+            </Badge>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Patient Symptoms
+            </label>
+            <div className="flex gap-2">
+              <Input
+                value={symptoms}
+                onChange={(e) => setSymptoms(e.target.value)}
+                placeholder="e.g., Ear pain, fever, headache..."
+                className="h-10 bg-background/50"
+                disabled={analyzing || isPatient}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    analyzeSymptoms();
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={analyzeSymptoms}
+                disabled={analyzing || !symptoms.trim() || isPatient}
+                className="h-10 px-4 border-violet-500/30 hover:bg-violet-500/10"
+              >
+                {analyzing ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-violet-400" />
+                ) : (
+                  <Sparkles className="h-4 w-4 text-violet-400" />
+                )}
+                <span className="ml-2 hidden sm:inline">Analyze</span>
+              </Button>
+              {aiRecommendation && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={clearRecommendation}
+                  disabled={isPatient}
+                  className="h-10 px-3 text-muted-foreground"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+            {aiError && (
+              <p className="text-xs text-red-400">{aiError}</p>
+            )}
+          </div>
+
+          {/* AI Recommendation Card */}
+          {aiRecommendation && (
+            <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="h-4 w-4 text-violet-400" />
+                <span className="text-sm font-semibold text-violet-400">
+                  AI Recommendation
+                </span>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Department</p>
+                  <p className="text-sm font-medium">{aiRecommendation.department.toUpperCase()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Recommended Doctor</p>
+                  <p className="text-sm font-medium">
+                    \u2B50 {aiRecommendation.recommendedDoctor.name}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Reason</p>
+                  <p className="text-sm font-medium">{aiRecommendation.recommendedDoctor.reason}</p>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+                <span>Current Load: {aiRecommendation.recommendedDoctor.currentLoad} patients</span>
+                <span>Est. Wait: {aiRecommendation.recommendedDoctor.estimatedWait} mins</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Appointment Details */}
+      <div className="rounded-xl border bg-card p-5 shadow-sm animate-fade-in-up stagger-3">
         <div className="mb-4 flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
             <CalendarDays className="h-4 w-4 text-emerald-400" />
@@ -414,10 +591,15 @@ setSlots(available);
           <h3 className="text-sm font-semibold">Appointment Details</h3>
         </div>
 
-       <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">
               Select Doctor
+              {aiRecommendation && (
+              <span className="ml-1 text-violet-400">
+                    ({aiRecommendation.department.toUpperCase()})
+                  </span>
+              )}
             </label>
             <SearchSelect
               value={watch("doctor_id")}
@@ -428,66 +610,85 @@ setSlots(available);
                   shouldTouch: true,
                 })
               }
-              placeholder="Choose a doctor"
-              options={doctors.map((doctor) => ({
-                value: doctor.id,
-                label: doctor.name,
-              }))}
+              placeholder={aiRecommendation ? `Choose from ${aiRecommendation.department.toUpperCase()}` : "Choose a doctor"}
+              options={doctorOptions}
+              loading={loadingDoctors}
             />
             {errors.doctor_id && (
               <p className="text-xs text-red-400">{errors.doctor_id.message}</p>
             )}
           </div>
 
-         <div className="space-y-1.5">
-  <label className="text-xs font-medium text-muted-foreground">
-    Appointment Date
-  </label>
-
-  <Input
-    type="date"
-    {...register(
-      "appointment_date"
-    )}
-    className="h-10 bg-background/50"
-  />
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Appointment Date
+            </label>
+            <Input
+              type="date"
+              {...register("appointment_date")}
+              className="h-10 bg-background/50"
+            />
           </div>
 
           <div className="space-y-1.5">
-  <label className="text-xs font-medium text-muted-foreground">
-    Available Slot
-  </label>
-
- <select
-  className="w-full h-10 rounded-md border bg-background px-3"
-  {...register("appointment_time")}
->
-  <option value="">
-    Select Slot
-  </option>
-
-  {slots.map((slot) => (
-    <option
-      key={slot}
-      value={slot}
-    >
-      {slot}
-    </option>
-  ))}
-</select>
-
-{errors.appointment_time && (
-  <p className="text-xs text-red-400">
-    {errors.appointment_time.message}
-  </p>
-)}
-</div>
-          
+            <label className="text-xs font-medium text-muted-foreground">
+              Available Slot
+            </label>
+            <select
+              className="w-full h-10 rounded-md border bg-background px-3"
+              {...register("appointment_time")}
+            >
+              <option value="">Select Slot</option>
+              {slots.map((slot) => (
+                <option key={slot} value={slot}>
+                  {slot}
+                </option>
+              ))}
+            </select>
+            {errors.appointment_time && (
+              <p className="text-xs text-red-400">{errors.appointment_time.message}</p>
+            )}
+          </div>
         </div>
+
+        {/* Workload Comparison Warning */}
+        {workloadComparison && (
+          <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="h-4 w-4 text-amber-400" />
+              <span className="text-sm font-semibold text-amber-400">
+                Different Doctor Selected
+              </span>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-md border border-amber-500/20 bg-background/50 p-3">
+                <p className="text-xs text-muted-foreground mb-1">Selected Doctor</p>
+                <p className="text-sm font-medium">{workloadComparison.selectedDoctor.name}</p>
+                <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>Load: {workloadComparison.selectedDoctor.currentLoad} patients</span>
+                  <span>Wait: ~{workloadComparison.selectedDoctor.estimatedWait} mins</span>
+                </div>
+              </div>
+
+              <div className="rounded-md border border-violet-500/20 bg-violet-500/5 p-3">
+                <p className="text-xs text-muted-foreground mb-1">AI Recommended</p>
+                <p className="text-sm font-medium">\u2B50 {workloadComparison.recommendedDoctor.name}</p>
+                <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>Load: {workloadComparison.recommendedDoctor.currentLoad} patients</span>
+                  <span>Wait: ~{workloadComparison.recommendedDoctor.estimatedWait} mins</span>
+                </div>
+                <p className="mt-2 text-xs text-violet-400">
+                  {workloadComparison.recommendedDoctor.reason}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Status */}
-      <div className="rounded-xl border bg-card p-5 shadow-sm animate-fade-in-up stagger-3">
+      <div className="rounded-xl border bg-card p-5 shadow-sm animate-fade-in-up stagger-4">
         <div className="mb-4 flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
             <ClipboardCheck className="h-4 w-4 text-emerald-400" />
@@ -498,7 +699,7 @@ setSlots(available);
         <div className="max-w-xs">
           <StatusSelect
             value={watch("status")}
-            onChange={(val) => setValue("status", val as "PENDING" | "CONFIRMED" | "COMPLETED", { shouldValidate: true })}
+            onChange={(val) => setValue("status", val as "PENDING" | "CONFIRMED" | "CHECKED_IN" | "WAITING" | "COMPLETED", { shouldValidate: true })}
             disabled={isPatient}
           />
           {errors.status && (
@@ -513,7 +714,7 @@ setSlots(available);
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between animate-fade-in-up stagger-4">
+      <div className="flex items-center justify-between animate-fade-in-up stagger-5">
         <Button
           type="button"
           variant="ghost"

@@ -25,6 +25,14 @@ const statusConfig: Record<string, { label: string; className: string }> = {
     label: "Confirmed",
     className: "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/50 dark:text-teal-400 dark:border-teal-800",
   },
+  CHECKED_IN: {
+    label: "Checked In",
+    className: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800",
+  },
+  WAITING: {
+    label: "Waiting",
+    className: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-800",
+  },
   IN_PROGRESS: {
     label: "In Progress",
     className: "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/50 dark:text-cyan-400 dark:border-cyan-800",

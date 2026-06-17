@@ -443,7 +443,7 @@ Please seek immediate medical attention if symptoms worsen.
 Status:
 Pending Confirmation
 
-You will receive a queue number once the appointment is confirmed.
+You will receive a queue number when you check in.
 `;
   } catch (error) {
     console.error(

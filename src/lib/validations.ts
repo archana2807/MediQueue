@@ -103,6 +103,8 @@ export const appointmentSchema =
     status: z.enum([
       "PENDING",
       "CONFIRMED",
+      "CHECKED_IN",
+      "WAITING",
       "COMPLETED",
     ]),
   });

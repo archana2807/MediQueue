@@ -101,19 +101,22 @@ export default function AppointmentsTable() {
           ),
         },
       ]}
-      actions={(appointment) =>
-        !isPatient && (
+      actions={(appointment) => {
+        const locked = ["CHECKED_IN", "WAITING", "IN_PROGRESS", "COMPLETED"].includes(appointment.status);
+        return !isPatient && (
           <div className="flex items-center gap-1">
-            <Link href={`/appointments/${appointment.id}/edit`}>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-8 w-8 hover:bg-emerald-500/10"
-                title="Edit Appointment"
-              >
-                <Pencil className="h-4 w-4 text-emerald-400" />
-              </Button>
-            </Link>
+            {!locked && (
+              <Link href={`/appointments/${appointment.id}/edit`}>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 hover:bg-emerald-500/10"
+                  title="Edit Appointment"
+                >
+                  <Pencil className="h-4 w-4 text-emerald-400" />
+                </Button>
+              </Link>
+            )}
             <Link href={`/patients/${appointment.patient_id}/history`}>
               <Button
                 size="icon"
@@ -124,13 +127,15 @@ export default function AppointmentsTable() {
                 <History className="h-4 w-4 text-cyan-400" />
               </Button>
             </Link>
-            <DeleteAppointmentButton
-              id={appointment.id}
-              onSuccess={fetchAppointments}
-            />
+            {!locked && (
+              <DeleteAppointmentButton
+                id={appointment.id}
+                onSuccess={fetchAppointments}
+              />
+            )}
           </div>
-        )
-      }
+        );
+      }}
     />
   );
 }

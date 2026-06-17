@@ -68,7 +68,7 @@ export default function DoctorsTable() {
       }}
       columns={[
         { key: "name", label: "Doctor Name" },
-        { key: "specialization", label: "Specialization" },
+        { key: "specialization", label: "Specialization", render: (value: string) => value?.toUpperCase() },
         { key: "email", label: "Email" },
       ]}
       actions={(doctor) => (

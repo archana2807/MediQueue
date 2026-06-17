@@ -21,11 +21,13 @@ import {
 type Props = {
   id: string;
   onSuccess?: () => void;
+  disabled?: boolean;
 };
 
 export default function DeleteAppointmentButton({
   id,
   onSuccess,
+  disabled,
 }: Props) {
   const [loading, setLoading] = useState(false);
 
@@ -58,8 +60,9 @@ export default function DeleteAppointmentButton({
         <Button
           size="icon"
           variant="ghost"
-          className="h-8 w-8 hover:bg-red-500/10"
-          title="Delete Appointment"
+          disabled={disabled}
+          className={`h-8 w-8 ${disabled ? "opacity-30 cursor-not-allowed" : "hover:bg-red-500/10"}`}
+          title={disabled ? "Cannot delete in current status" : "Delete Appointment"}
         >
           <Trash2 className="h-4 w-4 text-red-400" />
         </Button>

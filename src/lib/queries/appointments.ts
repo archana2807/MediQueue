@@ -227,15 +227,12 @@ export async function updateAppointment(
     const currentStatus =
       current.rows[0].status;
 
-    // Assign queue number only
-    // when moving from
-    // PENDING -> CONFIRMED
+    // Assign queue number when
+    // moving to CHECKED_IN or WAITING
 
     if (
-      currentStatus ===
-        "PENDING" &&
-      status ===
-        "CONFIRMED" &&
+      (status === "CHECKED_IN" ||
+        status === "WAITING") &&
       !queueNumber
     ) {
       const queueResult =
