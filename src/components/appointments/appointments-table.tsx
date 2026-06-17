@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Pencil, History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -9,9 +9,11 @@ import DataTable from "@/components/common/data-table";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
 import DeleteAppointmentButton from "./delete-appointment-button";
-
+import { useQuery } from "@tanstack/react-query";
+import { useDebounce } from "use-debounce";
 type Appointment = {
   id: string;
+  patient_id: string;
   patient_name: string;
   doctor_name: string;
   appointment_date: string;
@@ -19,59 +21,102 @@ type Appointment = {
 };
 
 export default function AppointmentsTable() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
+ 
   const [search, setSearch] = useState("");
+  
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  
 
   const { data: session } = useSession();
   const isPatient = (session?.user as any)?.role === "PATIENT";
+const [debouncedSearch] =
+  useDebounce(search, 500);
+  
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchAppointments();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [page, pageSize, search]);
+  const {
+  data,
+  isLoading,
+  isError,
+  error,
+  refetch,
+} = useQuery<{
+  data: Appointment[];
+  total: number;
+  totalPages: number;
+}>({
+  queryKey: [
+    "appointments",
+    page,
+    pageSize,
+    debouncedSearch,
+  ],
 
-  async function fetchAppointments() {
-    try {
-      setLoading(true);
-      const response = await fetch(
-        `/api/appointments?page=${page}&limit=${pageSize}&search=${search}`
+  queryFn: async () => {
+    const response =
+      await fetch(
+        `/api/appointments?page=${page}&limit=${pageSize}&search=${debouncedSearch}`
       );
-      const result = await response.json();
 
-      setAppointments(
-        (result.data || []).map((appointment: Appointment) => ({
-          ...appointment,
-          appointment_date: new Date(
-            appointment.appointment_date
-          ).toLocaleString("en-IN", {
+    if (!response.ok) {
+      throw new Error(
+        "Failed to load appointments"
+      );
+    }
+
+    return response.json();
+  },
+
+  staleTime: 30000,
+  placeholderData: (prev) => prev,
+});
+  const appointments =
+  (data?.data ?? []).map(
+    (appointment: Appointment) => ({
+      ...appointment,
+      appointment_date:
+        new Date(
+          appointment.appointment_date
+        ).toLocaleString(
+          "en-IN",
+          {
             day: "2-digit",
             month: "short",
             year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
-          }),
-        }))
-      );
+          }
+        ),
+    })
+  );
 
-      setTotal(result.total || 0);
-      setTotalPages(result.totalPages || 1);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }
+const total =
+  data?.total ?? 0;
+
+const totalPages =
+  data?.totalPages ?? 1;
+
+  if (isError) {
+  return (
+    <div className="flex flex-col items-center gap-4 py-10">
+      <p className="text-red-500">
+        {error instanceof Error
+          ? error.message
+          : "Failed to load appointments"}
+      </p>
+
+      <Button
+        onClick={() => refetch()}
+      >
+        Retry
+      </Button>
+    </div>
+  );
+}
 
   return (
     <DataTable
-      loading={loading}
+     loading={isLoading}
       data={appointments}
       total={total}
       totalPages={totalPages}
@@ -130,7 +175,7 @@ export default function AppointmentsTable() {
             {!locked && (
               <DeleteAppointmentButton
                 id={appointment.id}
-                onSuccess={fetchAppointments}
+                
               />
             )}
           </div>

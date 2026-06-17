@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { toast } from "sonner";
 import { Trash2, Loader2 } from "lucide-react";
 
@@ -17,42 +16,83 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
+import {
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 type Props = {
   id: string;
-  onSuccess?: () => void;
+  
   disabled?: boolean;
 };
 
 export default function DeleteAppointmentButton({
   id,
-  onSuccess,
+  
   disabled,
 }: Props) {
-  const [loading, setLoading] = useState(false);
 
-  const handleDelete = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/appointments/${id}`, {
-        method: "DELETE",
-      });
-      const result = await response.json();
+  const queryClient =
+  useQueryClient();
+
+  const deleteAppointment =
+  useMutation({
+    mutationKey: [
+      "deleteAppointment",
+    ],
+
+    mutationFn: async () => {
+      const response =
+        await fetch(
+          `/api/appointments/${id}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+      const result =
+        await response.json();
 
       if (!response.ok) {
-        toast.error(result.message || "Failed to delete appointment");
-        return;
+        throw new Error(
+          result.message ||
+            "Failed to delete appointment"
+        );
       }
 
-      toast.success("Appointment deleted successfully");
-      onSuccess?.();
-    } catch (error) {
-      console.error(error);
-      toast.error("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return result;
+    },
+
+    onSuccess: () => {
+      toast.success(
+        "Appointment deleted successfully"
+      );
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "appointments",
+        ],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "dashboard",
+        ],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["queue"],
+      });
+    },
+
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong"
+      );
+    },
+  });
 
   return (
     <AlertDialog>
@@ -80,16 +120,22 @@ export default function DeleteAppointmentButton({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={handleDelete}
-            disabled={loading}
+            onClick={() =>
+  deleteAppointment.mutate()
+}
+            disabled={
+  deleteAppointment.isPending
+}
             className="bg-red-500 hover:bg-red-600"
           >
-            {loading ? (
+           {deleteAppointment.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Trash2 className="mr-2 h-4 w-4" />
             )}
-            {loading ? "Deleting..." : "Delete"}
+            {deleteAppointment.isPending
+  ? "Deleting..."
+  : "Delete"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

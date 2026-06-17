@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useMutation,useQueryClient } from "@tanstack/react-query";
 
 import {
   AlertDialog,
@@ -21,38 +22,59 @@ import {
 
 type Props = {
   id: string;
-  onSuccess?: () => void;
 };
 
 export default function DeleteDoctorButton({
   id,
-  onSuccess,
 }: Props) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
 
-  const handleDelete = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/doctors/${id}`, {
+  const queryClient = useQueryClient();
+  const deleteDoctor = useMutation({
+  mutationFn: async () => {
+    const response = await fetch(
+      `/api/doctors/${id}`,
+      {
         method: "DELETE",
-      });
-      const result = await response.json();
-
-      if (!response.ok) {
-        toast.error(result.message || "Failed to delete doctor");
-        return;
       }
+    );
 
-      toast.success("Doctor deleted successfully");
-      onSuccess?.();
-    } catch (error) {
-      console.error(error);
-      toast.error("Something went wrong");
-    } finally {
-      setLoading(false);
+    const result =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.message ||
+        "Failed to delete doctor"
+      );
     }
-  };
+
+    return result;
+  },
+
+  onSuccess: () => {
+    toast.success(
+      "Doctor deleted successfully"
+    );
+
+    queryClient.invalidateQueries({
+      queryKey: ["doctors"],
+    });
+
+    router.refresh();
+  },
+
+  onError: (error) => {
+    toast.error(
+      error instanceof Error
+        ? error.message
+        : "Something went wrong"
+    );
+  },
+});
+
+  
+
 
   return (
     <AlertDialog>
@@ -79,16 +101,16 @@ export default function DeleteDoctorButton({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={handleDelete}
-            disabled={loading}
+            onClick={() => deleteDoctor.mutate()}
+           disabled={deleteDoctor.isPending}
             className="bg-red-500 hover:bg-red-600"
           >
-            {loading ? (
+            {deleteDoctor.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Trash2 className="mr-2 h-4 w-4" />
             )}
-            {loading ? "Deleting..." : "Delete"}
+           {deleteDoctor.isPending ?"Deleting..." : "Delete"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

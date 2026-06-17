@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Pencil } from "lucide-react";
-
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import DeleteDoctorButton from "./delete-doctor-button";
 import DataTable from "@/components/common/data-table";
 import { Button } from "@/components/ui/button";
+import { useDebounce }
+from "use-debounce";
 
 type Doctor = {
   id: string;
@@ -16,41 +18,67 @@ type Doctor = {
 };
 
 export default function DoctorsTable() {
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [loading, setLoading] = useState(true);
+  
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  
+  const [debouncedSearch] = useDebounce(search, 500);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchDoctors();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [page, pageSize, search]);
+  const { data, isLoading,isError,error, refetch} = useQuery<{
+  data: Doctor[];
+  total: number;
+  totalPages: number;
+}>({
+    queryKey: ["doctors", page, pageSize, debouncedSearch],
+  queryFn: async () => {
+      // console.log("Fetching doctors...");
+      const response = await fetch(`/api/doctors?page=${page}&limit=${pageSize}&search=${debouncedSearch}`)
+     if (!response.ok) {
+  const text =
+    await response.text();
 
-  async function fetchDoctors() {
-    try {
-      setLoading(true);
-      const response = await fetch(
-        `/api/doctors?page=${page}&limit=${pageSize}&search=${search}`
-      );
-      const result = await response.json();
-      setDoctors(result.data || []);
-      setTotal(result.total || 0);
-      setTotalPages(result.totalPages || 1);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  console.log(text);
 
+  throw new Error(
+    `Failed to load doctors (${response.status})`
+  );
+}
+      return response.json()
+    },
+    staleTime:  5 * 60 * 1000,
+  })
+
+  
+
+  
+ const doctors =
+  data?.data ?? [];
+
+const total =
+  data?.total ?? 0;
+
+const totalPages =
+  data?.totalPages ?? 1;
+if (isError) {
   return (
+    <div className="flex flex-col items-center gap-4 py-10">
+      <p className="text-red-500">
+        {error instanceof Error
+          ? error.message
+          : "Failed to load doctors"}
+      </p>
+
+      <Button onClick={() => refetch()}>
+        Retry
+      </Button>
+    </div>
+  );
+}
+  return (
+    
     <DataTable
-      loading={loading}
+      loading={isLoading}
       data={doctors}
       total={total}
       totalPages={totalPages}
@@ -83,9 +111,11 @@ export default function DoctorsTable() {
               <Pencil className="h-4 w-4 text-emerald-400" />
             </Button>
           </Link>
-          <DeleteDoctorButton id={doctor.id} onSuccess={fetchDoctors} />
+          <DeleteDoctorButton id={doctor.id}  />
         </div>
       )}
-    />
+        
+      />
+       
   );
 }

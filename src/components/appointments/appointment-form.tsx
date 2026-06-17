@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSession } from "next-auth/react";
+import {
+  useMemo,
+} from "react";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   CalendarDays,
@@ -141,6 +149,8 @@ type AppointmentFormProps = {
     patient_name?: string;
     patient_phone?: string;
     doctor_id: string;
+      doctor_name?: string; // 👈 add
+
     appointment_date: string;
     status: string;
   };
@@ -151,10 +161,9 @@ export default function AppointmentForm({
   initialData,
 }: AppointmentFormProps) {
   const router = useRouter();
-  const [allDoctors, setAllDoctors] = useState<Doctor[]>([]);
-  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
-  const [slots, setSlots] = useState<string[]>([]);
-  const [loadingDoctors, setLoadingDoctors] = useState(false);
+ 
+  
+  
   const [patientId, setPatientId] = useState<string | undefined>(
     initialData?.patient_id
   );
@@ -168,14 +177,15 @@ export default function AppointmentForm({
   const user = session?.user as { id?: string; name?: string; phone?: string; role?: string } | undefined;
   const isPatient = user?.role === "PATIENT";
   const isEdit = !!appointmentId;
-
+const queryClient =
+  useQueryClient();
   const {
     register,
     handleSubmit,
     setValue,
     watch,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
@@ -192,40 +202,37 @@ export default function AppointmentForm({
   const selectedDate = watch("appointment_date");
 
   useEffect(() => {
-    if (!initialData) return;
-    const currentTime = new Date(initialData.appointment_date)
-      .toTimeString()
-      .slice(0, 5);
-    reset({
-      doctor_id: initialData.doctor_id,
-      appointment_date: new Date(initialData.appointment_date)
-        .toISOString()
-        .slice(0, 10),
-      appointment_time: currentTime,
-      status: initialData.status as "PENDING" | "CONFIRMED" | "CHECKED_IN" | "WAITING" | "COMPLETED",
+  if (!initialData) return;
+    console.log("initialData",initialData);
+  const appointmentDate =
+    new Date(initialData.appointment_date)
+      .toISOString()
+      .split("T")[0];
+
+  const appointmentTime =
+  new Date(initialData.appointment_date)
+    .toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
     });
-    setSlots([currentTime]);
-    setPatientId(initialData.patient_id);
-    setValue("patient_name", initialData.patient_name ?? "");
-    setValue("patient_phone", initialData.patient_phone ?? "");
-  }, [initialData, reset]);
+    console.log("initialData",initialData);
 
-  useEffect(() => {
-    loadDoctors();
-  }, []);
+  reset({
+    doctor_id: initialData.doctor_id,
+    patient_name: initialData.patient_name ?? "",
+    patient_phone: initialData.patient_phone ?? "",
+    appointment_date: appointmentDate,
+    appointment_time: appointmentTime,
+    status: initialData.status as any,
+  });
 
-  useEffect(() => {
-    if (!selectedDoctor || !selectedDate) return;
-    loadSlots(selectedDoctor, selectedDate);
-  }, [selectedDoctor, selectedDate]);
+  setPatientId(initialData.patient_id);
+}, [initialData, reset]);
 
-  useEffect(() => {
-    if (!selectedDoctor || !selectedDate) return;
-    const interval = setInterval(() => {
-      loadSlots(selectedDoctor, selectedDate);
-    }, 15000);
-    return () => clearInterval(interval);
-  }, [selectedDoctor, selectedDate]);
+  
+
+  
 
   useEffect(() => {
     if (isPatient && user) {
@@ -240,56 +247,153 @@ export default function AppointmentForm({
       setValue("status", "PENDING");
     }
   }, [isPatient, appointmentId, setValue]);
+const {
+  data: doctorsData,
+  isLoading: loadingDoctors,
+} = useQuery({
+  queryKey: ["doctors"],
 
-  useEffect(() => {
-  if (aiRecommendation) {
-    setFilteredDoctors(
-      aiRecommendation.departmentDoctors.map(
-        (doctor) => ({
-          id: doctor.id,
-          name: doctor.name,
-          specialization:
-            doctor.specialization,
-        })
-      )
-    );
-  } else {
-    setFilteredDoctors(allDoctors);
-  }
-}, [aiRecommendation, allDoctors]);
+  queryFn: async () => {
+    const response =
+      await fetch("/api/doctors?limit=100");
 
-  async function loadDoctors() {
-    try {
-      setLoadingDoctors(true);
-      const response = await fetch("/api/doctors");
-      const result = await response.json();
-      const doctorData = result.data || [];
-      setAllDoctors(doctorData);
-      setFilteredDoctors(doctorData);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load doctors");
-    } finally {
-      setLoadingDoctors(false);
-    }
-  }
-
-  const loadSlots = async (doctorId: string, date: string) => {
-    try {
-      const response = await fetch(
-        `/api/appointments/availability?doctorId=${doctorId}&date=${date}`
+    if (!response.ok) {
+      throw new Error(
+        "Failed to load doctors"
       );
-      const selectedTime = watch("appointment_time");
-      const result = await response.json();
-      const availableSlots = result.availableSlots || [];
-      const available = selectedTime && !availableSlots.includes(selectedTime)
-        ? [selectedTime, ...availableSlots]
-        : availableSlots;
-      setSlots(available);
-    } catch (error) {
-      console.error("Slot Load Error:", error);
     }
-  };
+
+    return response.json();
+  },
+
+  staleTime:
+    5 * 60 * 1000,
+  placeholderData: (prev) => prev,
+});
+  
+  const allDoctors: Doctor[] =
+    doctorsData?.data ?? [];
+  
+  console.log("allDoctors", allDoctors);
+console.log(
+  "Cancer Doctors",
+  allDoctors.filter(
+    (doctor) =>
+      doctor.specialization.toLowerCase() ===
+      aiRecommendation?.department.toLowerCase()
+  )
+);
+
+const filteredDoctors =
+  isEdit
+    ? allDoctors
+    : aiRecommendation
+      ? aiRecommendation.departmentDoctors
+      : allDoctors;
+  
+ const doctorOptions = useMemo(() => {
+  const options = filteredDoctors.map((doctor) => ({
+    value: doctor.id,
+    label:
+      aiRecommendation?.recommendedDoctor.id === doctor.id
+        ? `${doctor.name} (Recommended)`
+        : doctor.name,
+  }));
+
+  const currentDoctorId =
+    watch("doctor_id") || initialData?.doctor_id;
+
+  if (
+    currentDoctorId &&
+    !options.some(
+      (o) => o.value === currentDoctorId
+    )
+  ) {
+    const currentDoctor = allDoctors.find(
+      (d) => d.id === currentDoctorId
+    );
+
+    if (currentDoctor) {
+      options.unshift({
+        value: currentDoctor.id,
+        label: `${currentDoctor.name} (Current)`,
+      });
+    }
+  }
+
+  return options;
+}, [
+  filteredDoctors,
+  aiRecommendation,
+  allDoctors,
+  watch("doctor_id"),
+  initialData?.doctor_id,
+]);
+  console.log(
+  aiRecommendation?.departmentDoctors
+);
+  const currentTime = initialData?.appointment_date
+  ? new Date(initialData.appointment_date)
+      .toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })
+  : "";
+  
+  console.log("doctor_id", watch("doctor_id"));
+console.log("appointment_date", watch("appointment_date"));
+console.log("appointment_time", watch("appointment_time"));
+  
+  
+  const {
+  data: slotsData,
+  isLoading: loadingSlots,
+} = useQuery<{
+  availableSlots: string[];
+}>({
+  queryKey: [
+    "availability",
+    selectedDoctor,
+    selectedDate,
+  ],
+
+  enabled:
+    !!selectedDoctor &&
+    !!selectedDate,
+
+  queryFn: async () => {
+    const response = await fetch(
+      `/api/appointments/availability?doctorId=${selectedDoctor}&date=${selectedDate}`
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        "Failed to load slots"
+      );
+    }
+
+    return response.json();
+  },
+
+  refetchInterval: 15000,
+  placeholderData: (prev) => prev,
+});
+  
+ 
+const slots =
+  slotsData?.availableSlots ?? [];
+
+const availableSlots = [...slots];
+
+if (
+  isEdit &&
+  currentTime &&
+  !availableSlots.includes(currentTime)
+) {
+  availableSlots.unshift(currentTime);
+}
+ 
 
   const analyzeSymptoms = useCallback(async () => {
     if (!symptoms.trim()) {
@@ -331,12 +435,12 @@ export default function AppointmentForm({
     }
   }, [symptoms, setValue]);
 
-  const clearRecommendation = useCallback(() => {
+ const clearRecommendation =
+  useCallback(() => {
     setAiRecommendation(null);
     setSymptoms("");
     setAiError(null);
-    setFilteredDoctors(allDoctors);
-  }, [allDoctors]);
+  }, []);
 
   const getWorkloadComparison = useCallback(
     (currentDoctorId: string) => {
@@ -371,54 +475,131 @@ export default function AppointmentForm({
 
   const workloadComparison = getWorkloadComparison(selectedDoctor);
 
-  const doctorOptions = filteredDoctors.map((doctor) => ({
-    value: doctor.id,
-    label:
-      aiRecommendation?.recommendedDoctor.id === doctor.id
-        ? `${doctor.name} (Recommended)`
-        : doctor.name,
-  }));
+  
 
-  const onSubmit = async (data: AppointmentFormData) => {
-    try {
-      const appointmentDateTime = `${data.appointment_date} ${data.appointment_time}:00`;
+
+  const saveAppointment =
+  useMutation({
+    mutationKey: [
+      isEdit
+        ? "updateAppointment"
+        : "createAppointment",
+    ],
+
+    mutationFn: async (
+      data: AppointmentFormData
+    ) => {
+      const appointmentDateTime =
+        `${data.appointment_date} ${data.appointment_time}:00`;
 
       const payload = {
-        patient_id: patientId ?? null,
-        patient_name: data.patient_name,
-        patient_phone: data.patient_phone,
-        doctor_id: data.doctor_id,
-        appointment_date: appointmentDateTime,
-        status: data.status,
+        patient_id:
+          patientId ?? null,
+        patient_name:
+          data.patient_name,
+        patient_phone:
+          data.patient_phone,
+        doctor_id:
+          data.doctor_id,
+        appointment_date:
+          appointmentDateTime,
+        status:
+          data.status,
       };
 
-      const response = await fetch(
-        isEdit ? `/api/appointments/${appointmentId}` : "/api/appointments",
-        {
-          method: isEdit ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response =
+        await fetch(
+          isEdit
+            ? `/api/appointments/${appointmentId}`
+            : "/api/appointments",
+          {
+            method: isEdit
+              ? "PUT"
+              : "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify(
+              payload
+            ),
+          }
+        );
 
-      const result = await response.json();
+      const result =
+        await response.json();
 
       if (!response.ok) {
-        toast.error(result.message);
-        return;
+        throw new Error(
+          result.message ||
+            "Failed to save appointment"
+        );
       }
 
+      return result;
+    },
+
+    onSuccess: async (
+      _,
+      variables
+    ) => {
       toast.success(
-        isEdit ? "Appointment updated successfully" : "Appointment created successfully"
+        isEdit
+          ? "Appointment updated successfully"
+          : "Appointment created successfully"
       );
-      await loadSlots(data.doctor_id, data.appointment_date);
-      router.push("/appointments");
-      router.refresh();
-    } catch (error) {
-      console.error(error);
-      toast.error("Something went wrong");
-    }
+
+      // await loadSlots(
+      //   variables.doctor_id,
+      //   variables.appointment_date
+      // );
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "appointments",
+        ],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "dashboard",
+        ],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["queue"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "availability",
+        ],
+      });
+
+      router.push(
+        "/appointments"
+      );
+    },
+
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong"
+      );
+    },
+  });
+
+  const onSubmit = (
+  data: AppointmentFormData
+) => {
+  saveAppointment.mutate(
+    data
+  );
   };
+  
+  console.log("selectedDoctor", watch("doctor_id"));
+console.log("doctorOptions", doctorOptions);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -564,7 +745,7 @@ export default function AppointmentForm({
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Recommended Doctor</p>
                   <p className="text-sm font-medium">
-                    \u2B50 {aiRecommendation.recommendedDoctor.name}
+                  {aiRecommendation.recommendedDoctor.name}
                   </p>
                 </div>
                 <div>
@@ -639,11 +820,11 @@ export default function AppointmentForm({
               {...register("appointment_time")}
             >
               <option value="">Select Slot</option>
-              {slots.map((slot) => (
-                <option key={slot} value={slot}>
-                  {slot}
-                </option>
-              ))}
+              {availableSlots.map((slot) => (
+  <option key={slot} value={slot}>
+    {slot}
+  </option>
+))}
             </select>
             {errors.appointment_time && (
               <p className="text-xs text-red-400">{errors.appointment_time.message}</p>
@@ -727,11 +908,13 @@ export default function AppointmentForm({
 
         <Button
           type="submit"
-          disabled={isSubmitting}
+          disabled={
+  saveAppointment.isPending
+}
           className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:from-emerald-600 hover:to-teal-600 transition-all duration-300 px-6"
           size="lg"
         >
-          {isSubmitting ? (
+         {saveAppointment.isPending ? (
             <>
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               Saving...

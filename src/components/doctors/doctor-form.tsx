@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useQueryClient,useMutation } from "@tanstack/react-query";
 
 const SPECIALIZATIONS = [
   "Cardiology",
@@ -51,12 +52,15 @@ export default function DoctorForm({
   doctorId,
 }: DoctorFormProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isEdit = !!doctorId;
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: {
+  errors,
+}
   } = useForm<DoctorFormData>({
     resolver: zodResolver(doctorSchema),
     defaultValues: {
@@ -68,34 +72,69 @@ export default function DoctorForm({
     },
   });
 
-  const onSubmit = async (data: DoctorFormData) => {
-    try {
+  const saveDoctor = useMutation({
+    mutationFn: async (data: DoctorFormData) => {
+      
       const response = await fetch(
-        isEdit ? `/api/doctors/${doctorId}` : "/api/doctors",
-        {
-          method: isEdit ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        }
-      );
+          isEdit
+            ? `/api/doctors/${doctorId}`
+            : "/api/doctors",
+          {
+            method: isEdit
+              ? "PUT"
+              : "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify(
+              data
+            ),
+          }
+        );
 
-      const result = await response.json();
-
+      const result =
+        await response.json();
+      
       if (!response.ok) {
-        toast.error(result.message || "Operation failed");
-        return;
+        throw new Error(
+          result.message ||
+          "Operation failed"
+        );
       }
 
-      toast.success(
-        isEdit ? "Doctor updated successfully" : "Doctor created successfully"
-      );
+      return result;
+
+    },
+     onSuccess: () => {
+    toast.success(
+  isEdit
+    ? "Doctor updated successfully"
+    : "Doctor created successfully"
+);
+
+    queryClient.invalidateQueries({
+      queryKey: ["doctors"],
+    });
+
       router.push("/doctors");
-      router.refresh();
-    } catch (error) {
-      console.error(error);
-      toast.error("Something went wrong");
-    }
-  };
+    },
+
+  onError: (error) => {
+    toast.error(
+      error instanceof Error
+        ? error.message
+        : "Something went wrong"
+    );
+  },
+  })
+  const onSubmit = (
+  data: DoctorFormData
+) => {
+  saveDoctor.mutate(data);
+};
+
+  
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="mx-auto max-w-2xl space-y-5">
@@ -243,10 +282,12 @@ export default function DoctorForm({
 
         <Button
           type="submit"
-          disabled={isSubmitting}
+          disabled={
+  saveDoctor.isPending
+}
           className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:from-emerald-600 hover:to-teal-600 transition-all duration-300"
         >
-          {isSubmitting ? (
+         {saveDoctor.isPending ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Saving...

@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
-import AuthProvider from "@/components/providers/AuthProvider";
+import AuthProvider from "@/providers/AuthProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ChatWidget from "@/components/chat/chat-widget";
+import QueryProvider from "@/providers/query-provider";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -32,12 +33,17 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
       <body className="min-h-full flex flex-col">
+         
+
         <TooltipProvider delayDuration={0}>
         <AuthProvider>
                   
+ <QueryProvider>
+              {children}
+              
+              <ChatWidget />
+                </QueryProvider>
 
-            {children}
-            <ChatWidget />
   </AuthProvider>
 
   <Toaster

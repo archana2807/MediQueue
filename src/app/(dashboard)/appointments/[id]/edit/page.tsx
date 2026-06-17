@@ -22,7 +22,7 @@ export default async function EditAppointmentPage({
     await getAppointmentById(
       id
     );
-
+  console.log("appointment",appointment);
   if (!appointment) {
     return (
       <div>
@@ -49,7 +49,7 @@ export default async function EditAppointmentPage({
     patient_phone: appointment.patient_phone,
     doctor_id: appointment.doctor_id,
     appointment_date: appointment.appointment_date,
-    // queue_number: appointment.queue_number,
+    doctor_name: appointment.doctor_name,
     status: appointment.status,
   }}
 />
