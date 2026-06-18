@@ -162,7 +162,9 @@ export default function AppointmentForm({
 }: AppointmentFormProps) {
   const router = useRouter();
  
-  
+  const today = new Date()
+  .toISOString()
+  .split("T")[0];
   
   const [patientId, setPatientId] = useState<string | undefined>(
     initialData?.patient_id
@@ -192,7 +194,14 @@ const queryClient =
       patient_name: "",
       patient_phone: "",
       doctor_id: "",
-      appointment_date: "",
+       appointment_date:
+      initialData?.appointment_date
+        ? new Date(
+            initialData.appointment_date
+          )
+            .toISOString()
+            .split("T")[0]
+        : today,
       appointment_time: "",
       status: "PENDING",
     },
@@ -285,11 +294,9 @@ console.log(
 );
 
 const filteredDoctors =
-  isEdit
-    ? allDoctors
-    : aiRecommendation
-      ? aiRecommendation.departmentDoctors
-      : allDoctors;
+  aiRecommendation
+    ? aiRecommendation.departmentDoctors
+    : allDoctors;
   
  const doctorOptions = useMemo(() => {
   const options = filteredDoctors.map((doctor) => ({
@@ -441,7 +448,19 @@ if (
     setSymptoms("");
     setAiError(null);
   }, []);
+useEffect(() => {
+  if (!aiRecommendation) return;
 
+  setValue(
+    "doctor_id",
+    aiRecommendation.recommendedDoctor.id,
+    {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true,
+    }
+  );
+}, [aiRecommendation, setValue]);
   const getWorkloadComparison = useCallback(
     (currentDoctorId: string) => {
       if (!aiRecommendation) return null;

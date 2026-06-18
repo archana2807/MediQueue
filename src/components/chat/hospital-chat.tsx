@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
+import { useMutation } from "@tanstack/react-query";
 type Message = {
   role: "user" | "assistant";
   content: string;
@@ -14,35 +14,11 @@ export default function HospitalChat() {
   const [message, setMessage] =
     useState("");
 
-  const [loading, setLoading] =
-    useState(false);
-
-  const [messages, setMessages] =
-    useState<Message[]>([
-      {
-        role: "assistant",
-        content:
-          "Hello 👋 I'm MediQueue AI Assistant. How can I help you today?",
-      },
-    ]);
-
-  async function sendMessage() {
-    if (!message.trim()) return;
-
-    const userMessage = message;
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        content: userMessage,
-      },
-    ]);
-
-    setMessage("");
-    setLoading(true);
-
-    try {
+ const sendChat =
+  useMutation({
+    mutationFn: async (
+      userMessage: string
+    ) => {
       const response =
         await fetch("/api/chat", {
           method: "POST",
@@ -55,9 +31,16 @@ export default function HospitalChat() {
           }),
         });
 
-      const result =
-        await response.json();
+      if (!response.ok) {
+        throw new Error(
+          "Failed to send message"
+        );
+      }
 
+      return response.json();
+    },
+
+    onSuccess: (result) => {
       setMessages((prev) => [
         ...prev,
         {
@@ -67,9 +50,9 @@ export default function HospitalChat() {
             "No response available",
         },
       ]);
-    } catch (error) {
-      console.error(error);
+    },
 
+    onError: () => {
       setMessages((prev) => [
         ...prev,
         {
@@ -78,10 +61,35 @@ export default function HospitalChat() {
             "Something went wrong.",
         },
       ]);
-    } finally {
-      setLoading(false);
-    }
-  }
+    },
+  });
+
+  const [messages, setMessages] =
+    useState<Message[]>([
+      {
+        role: "assistant",
+        content:
+          "Hello 👋 I'm MediQueue AI Assistant. How can I help you today?",
+      },
+    ]);
+
+  async function sendMessage() {
+  if (!message.trim()) return;
+
+  const userMessage = message;
+
+  setMessages((prev) => [
+    ...prev,
+    {
+      role: "user",
+      content: userMessage,
+    },
+  ]);
+
+  setMessage("");
+
+  sendChat.mutate(userMessage);
+}
 
   return (
     <div className="flex h-full flex-col">
@@ -114,7 +122,7 @@ export default function HospitalChat() {
           )
         )}
 
-        {loading && (
+{sendChat.isPending && (
           <div className="flex justify-start">
             <div className="rounded-xl border bg-muted px-4 py-3 text-sm">
               Thinking...
@@ -145,10 +153,10 @@ export default function HospitalChat() {
 
           <Button
             onClick={sendMessage}
-            disabled={
-              loading ||
-              !message.trim()
-            }
+disabled={
+  sendChat.isPending ||
+  !message.trim()
+}
           >
             Send
           </Button>

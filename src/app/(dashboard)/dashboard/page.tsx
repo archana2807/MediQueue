@@ -1,26 +1,5 @@
-
-export const dynamic =
-  "force-dynamic";
-import DashboardCounts from "@/components/dashboard/dashboard-counts";
-import RecentAppointmentsTable from "@/components/dashboard/recent-appointments-card";
-
-import { getDashboardData } from "@/lib/queries/dashboard";
+import DashboardContent from "@/components/dashboard/dashboard-content";
 
 export default async function DashboardPage() {
-  const data =
-    await getDashboardData();
-
-  return (
-    <div className="space-y-4 animate-fade-in">
-      <DashboardCounts
-        stats={data.stats}
-      />
-
-      <RecentAppointmentsTable
-        appointments={
-          data.recentAppointments
-        }
-      />
-    </div>
-  );
+  return <DashboardContent />;
 }

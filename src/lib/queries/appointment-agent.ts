@@ -21,8 +21,7 @@ const BLOCKED_SLOTS = [
   "13:00",
 ];
 
-const MAX_DAILY_APPOINTMENTS =
-  5;
+
 
 function normalizeDate(
   originalMessage: string,
@@ -96,7 +95,7 @@ Rules:
 - appointmentTime must be HH:mm (24-hour format).
 - If user says "2 PM" return "14:00".
 - If user says "10:30 AM" return "10:30".
-- If no time is mentioned return "09:00".
+- If no time is mentioned return "".
 - If user says "today" or "tomorrow", convert them into actual dates.
 `,
         },
@@ -175,43 +174,18 @@ details.appointmentDate =
     details.appointmentDate
       );
     
-   const appointmentDateTime =
-  `${details.appointmentDate} ${
-    details.appointmentTime || "09:00"
-  }:00`;
+   const appointmentTime =
+  details.appointmentTime;
+
+const appointmentDateTime =
+  appointmentTime
+    ? `${details.appointmentDate} ${appointmentTime}:00`
+    : null;
+
+
     
     
-    const appointmentTime =
-  details.appointmentTime ||
-  "09:00";
-
-const hour = Number(
-  appointmentTime.split(":")[0]
-);
-
-if (
-  hour < WORKING_HOURS.start ||
-  hour >= WORKING_HOURS.end
-) {
-  return `
-Doctor appointments are available only between:
-
-09:00 AM - 06:00 PM
-`;
-    }
-    
-    if (
-  BLOCKED_SLOTS.includes(
-    appointmentTime
-  )
-) {
-  return `
-Doctor is unavailable at ${appointmentTime}.
-
-Lunch break:
-01:00 PM - 02:00 PM
-`;
-}
+  
 
     if (!details.doctorName) {
       return "Please provide a doctor name.";
@@ -258,6 +232,91 @@ Invalid appointment date.
 Please provide a future date.
 `;
     }
+   const todayString =
+  new Intl.DateTimeFormat(
+    "en-CA",
+    {
+      timeZone: "Asia/Kolkata",
+    }
+  ).format(new Date());
+
+if (
+  details.appointmentDate ===
+    todayString &&
+  appointmentTime
+) {
+  const now =
+    new Date();
+
+  const [hours, minutes] =
+    appointmentTime
+      .split(":")
+      .map(Number);
+
+  const selectedTime =
+    new Date();
+
+  selectedTime.setHours(
+    hours,
+    minutes,
+    0,
+    0
+  );
+
+  if (
+    selectedTime <= now
+  ) {
+    const slots = [
+      "09:00",
+      "10:00",
+      "11:00",
+      "12:00",
+      "14:00",
+      "15:00",
+      "16:00",
+      "17:00",
+    ];
+
+    const currentTime =
+      now.toLocaleTimeString(
+        "en-GB",
+        {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }
+      );
+
+    const availableSlots =
+      slots.filter(
+        (slot) =>
+          slot > currentTime
+      );
+    if (
+  availableSlots.length === 0
+) {
+  return `
+No slots available for today.
+
+Please choose tomorrow or another date.
+`;
+}
+
+    return `
+The selected time (${appointmentTime}) has already passed.
+
+Available slots:
+
+${availableSlots
+  .map(
+    (slot) => `✓ ${slot}`
+  )
+  .join("\n")}
+
+Please choose a future time.
+`;
+  }
+}
 const doctor =
   await findDoctor(
     details.doctorName
@@ -270,17 +329,115 @@ if (!doctor) {
   await getDoctorAppointments(
     doctor.id,
     details.appointmentDate
+  );
+
+if (!appointmentTime) {
+  const slots = [
+    "09:00",
+    "10:00",
+    "11:00",
+    "12:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+  ];
+
+  const bookedTimes =
+    existing.map((a) =>
+      new Date(a.appointment_date)
+        .toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })
+    );
+
+  let availableSlots =
+    slots.filter(
+      (slot) =>
+        !bookedTimes.includes(slot)
+    );
+
+ 
+
+  if (
+    details.appointmentDate ===
+    todayString
+  ) {
+    const currentTime =
+      new Date().toLocaleTimeString(
+        "en-GB",
+        {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }
       );
-    
-    if (
-  existing.length >=
-  MAX_DAILY_APPOINTMENTS
+
+    availableSlots =
+      availableSlots.filter(
+        (slot) =>
+          slot > currentTime
+      );
+  }
+if (availableSlots.length === 0) {
+  return `
+No slots available for ${
+    details.appointmentDate === todayString
+      ? "today"
+      : details.appointmentDate
+  }.
+
+Please choose another date.
+`;
+}
+  return `
+${doctor.name} is available on ${details.appointmentDate}.
+
+Available slots:
+
+${availableSlots
+  .map((slot) => `✓ ${slot}`)
+  .join("\n")}
+
+Reply with your preferred time.
+`;
+}
+
+const hour = Number(
+  appointmentTime?.split(":")[0]
+);
+
+if (
+  hour < WORKING_HOURS.start ||
+  hour >= WORKING_HOURS.end
 ) {
   return `
-Doctor is fully booked for this date.
+Doctor appointments are available only between:
 
-Please choose another day.
+09:00 AM - 06:00 PM
 `;
+}
+
+if (
+  BLOCKED_SLOTS.includes(
+    appointmentTime
+  )
+) {
+  return `
+Doctor is unavailable at ${appointmentTime}.
+
+Lunch break:
+01:00 PM - 02:00 PM
+`;
+}
+    
+    
+   
+    
+    if (!appointmentDateTime) {
+  return "Please select a valid time.";
 }
     const conflict =
   existing.some(
@@ -306,25 +463,55 @@ if (conflict) {
   ];
 
   const bookedTimes =
-    existing.map((a) =>
-      new Date(
-        a.appointment_date
-      )
-        .toTimeString()
-        .slice(0, 5)
+  existing.map((a) =>
+    new Date(
+      a.appointment_date
+    ).toLocaleTimeString(
+      "en-GB",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }
+    )
+  );
+
+  let availableSlots =
+  slots.filter(
+    (slot) =>
+      !bookedTimes.includes(slot)
+  );
+
+
+
+if (
+  details.appointmentDate ===
+  todayString
+) {
+  const currentTime =
+    new Date().toLocaleTimeString(
+      "en-GB",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }
     );
 
-  const availableSlots =
-    slots
-      .filter(
-        (slot) =>
-          !bookedTimes.includes(
-            slot
-          )
-      )
-      .slice(0, 3);
+  availableSlots =
+    availableSlots.filter(
+      (slot) =>
+        slot > currentTime
+    );
+}
   
-  
+  if (availableSlots.length === 0) {
+  return `
+No alternative slots available.
+
+Please choose another date.
+`;
+}
 
   return `
 Doctor already has an appointment at ${
@@ -342,34 +529,10 @@ ${availableSlots
 Reply with a preferred time.
 `;
 }
-    const workload =
-      existing.length;
+    const currentLoad =
+  existing.length + 1;
 
-    let workloadStatus =
-      "Low";
-
-    let workloadReason =
-      "Doctor has good availability on the selected date.";
-
-    if (
-      workload >= 5
-    ) {
-      workloadStatus =
-        "Medium";
-
-      workloadReason =
-        "Doctor already has several appointments scheduled.";
-    }
-
-    if (
-      workload >= 10
-    ) {
-      workloadStatus =
-        "High";
-
-      workloadReason =
-        "Doctor has a busy schedule on the selected date.";
-    }
+    
 
    const appointment =
   await createAppointment(
@@ -381,69 +544,25 @@ Reply with a preferred time.
     "PENDING"
   );
 
-    const symptoms =
-      details.symptoms?.toLowerCase() ||
-      "";
-
-    const urgentKeywords =
-      [
-        "chest pain",
-        "difficulty breathing",
-        "shortness of breath",
-        "heart attack",
-        "stroke",
-        "unconscious",
-        "bleeding",
-      ];
-
-    const urgent =
-      urgentKeywords.some(
-        (keyword) =>
-          symptoms.includes(
-            keyword
-          )
-      );
+    
     const waitingMinutes =
-  existing.length * 15;
+  Math.max(
+    0,
+    currentLoad - 1
+  ) * 15;
 
-    return `
-✅ Appointment booked successfully
+   return `
+✅ Appointment Booked
 
-Appointment ID:
-${appointment.id}
+Doctor: ${doctor.name}
+Date: ${details.appointmentDate}
+Time: ${appointmentTime}
 
-Doctor:
-${doctor.name}
 
-Appointment:
-${appointmentDateTime}
+Estimated Wait: ${waitingMinutes} min
 
-AI Scheduling Analysis:
-${workloadStatus} Workload
-
-Reason:
-${workloadReason}
-
-Current Doctor Load:
-${existing.length + 1} appointments
-
-Estimated Waiting Time:
-${waitingMinutes} minutes
-
-${
-  urgent
-    ? `
-🚨 Urgent Symptoms Detected
-
-Please seek immediate medical attention if symptoms worsen.
-`
-    : ""
-}
-
-Status:
-Pending Confirmation
-
-You will receive a queue number when you check in.
+Appointment ID: ${appointment.id}
+Status: Pending
 `;
   } catch (error) {
     console.error(
