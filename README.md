@@ -1,57 +1,36 @@
-# ExamVerse - E-Book Store Platform
-
-A modern, production-quality E-Book Store Platform for students preparing for competitive exams.
-
-## Tech Stack
-
-- Next.js 16 App Router
-- TypeScript
-- Tailwind CSS
-- shadcn/ui
-- TanStack Query (React Query)
-- Framer Motion
-- Lucide React Icons
-
-## Features
-
-- Modern responsive navbar with glassmorphism
-- Hero banner with gradient background
-- Search bar for books and categories
-- Featured E-Books carousel
-- Popular Categories section
-- Best Selling Books section
-- Student testimonials
-- Call-to-action section
-- E-Book Listing with filters and sorting
-- E-Book Detail page with reviews
-- Checkout page with payment methods
-- My Library with reading progress
-- Reading Experience page with dark mode
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
+First, run the development server:
+
 ```bash
-npm install
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the app.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Exam Categories
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-- UPSC
-- SSC
-- Banking
-- Railway
-- JEE
-- NEET
-- CAT
-- GATE
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Mock API Endpoints
+## Learn More
 
-- `GET /api/books` - List books with filters
-- `GET /api/books/[id]` - Get book by ID
-- `GET /api/categories` - List categories
-- `GET /api/library` - Get library data
-- `POST /api/checkout` - Process checkout
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
