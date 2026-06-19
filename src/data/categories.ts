@@ -1,0 +1,68 @@
+import type { Category } from "@/types";
+
+export const categories: Category[] = [
+  {
+    id: "1",
+    name: "UPSC",
+    slug: "upsc",
+    icon: "Landmark",
+    bookCount: 45,
+    color: "from-blue-600 to-blue-700",
+  },
+  {
+    id: "2",
+    name: "SSC",
+    slug: "ssc",
+    icon: "FileText",
+    bookCount: 38,
+    color: "from-sky-600 to-sky-700",
+  },
+  {
+    id: "3",
+    name: "Banking",
+    slug: "banking",
+    icon: "Building2",
+    bookCount: 32,
+    color: "from-indigo-600 to-indigo-700",
+  },
+  {
+    id: "4",
+    name: "Railway",
+    slug: "railway",
+    icon: "Train",
+    bookCount: 28,
+    color: "from-blue-700 to-blue-800",
+  },
+  {
+    id: "5",
+    name: "JEE",
+    slug: "jee",
+    icon: "Atom",
+    bookCount: 35,
+    color: "from-violet-600 to-violet-700",
+  },
+  {
+    id: "6",
+    name: "NEET",
+    slug: "neet",
+    icon: "HeartPulse",
+    bookCount: 40,
+    color: "from-blue-500 to-blue-600",
+  },
+  {
+    id: "7",
+    name: "CAT",
+    slug: "cat",
+    icon: "GraduationCap",
+    bookCount: 25,
+    color: "from-slate-600 to-slate-700",
+  },
+  {
+    id: "8",
+    name: "GATE",
+    slug: "gate",
+    icon: "Cpu",
+    bookCount: 30,
+    color: "from-blue-800 to-blue-900",
+  },
+];
