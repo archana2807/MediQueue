@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
+import { chatWithRetry } from "@/lib/ai/chat";
 import { pool } from "@/lib/db";
 
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,7 +38,7 @@ export async function POST(request: NextRequest) {
       .map((d) => `${d.id}|${d.name}|${d.specialization}`)
       .join("\n");
 
-    const response = await openai.chat.completions.create({
+    const response = await chatWithRetry({
       model: "openai/gpt-oss-120b:free",
       temperature: 0,
       max_tokens: 300,

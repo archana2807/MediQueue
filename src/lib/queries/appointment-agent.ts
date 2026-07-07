@@ -1,6 +1,4 @@
 
-import OpenAI from "openai";
-
 import {
   createAppointment,
   getDoctorAppointments,
@@ -8,10 +6,7 @@ import {
 
 import { findDoctor } from "./doctors";
 
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
+import { chatWithRetry } from "@/lib/ai/chat";
 const WORKING_HOURS = {
   start: 9,
   end: 18,
@@ -60,7 +55,7 @@ export async function extractAppointmentDetails(
       .split("T")[0];
 
   const response =
-    await openai.chat.completions.create({
+    await chatWithRetry({
       model: "openai/gpt-oss-120b:free",
 
       temperature: 0,

@@ -1,12 +1,6 @@
-import OpenAI from "openai";
-
 import { pool } from "@/lib/db";
 import { getEmbedding } from "@/lib/ai/embed";
-
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
+import { chatWithRetry } from "@/lib/ai/chat";
 
 export async function retrieveContext(
   question: string
@@ -50,7 +44,7 @@ ${doc.content}`
       .join("\n\n");
 
   const response =
-    await openai.chat.completions.create({
+    await chatWithRetry({
       model: "openai/gpt-oss-120b:free",
 
       temperature: 0.2,

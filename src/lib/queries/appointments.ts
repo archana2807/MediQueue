@@ -112,69 +112,61 @@ export async function createAppointment(
   appointmentDate: string,
   status: string
 ) {
-  // Create walk-in patient
-  if (!patientId && patientName) {
-    const userResult =
-      await pool.query(
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // Create walk-in patient
+    if (!patientId && patientName) {
+      const userResult = await client.query(
         `
         INSERT INTO users (
-          id,
-          name,
-          email,
-          password,
-          role,
-          phone
+          id, name, email, password, role, phone
         )
         VALUES (
-          gen_random_uuid(),
-          $1,
-          $2,
-          '',
-          'PATIENT',
-          $3
+          gen_random_uuid(), $1, $2, '', 'PATIENT', $3
         )
         RETURNING id
         `,
-        [
-          patientName,
-          `${Date.now()}@walkin.local`,
-          patientPhone,
-        ]
+        [patientName, `${Date.now()}@walkin.local`, patientPhone]
       );
+      patientId = userResult.rows[0].id;
+    }
 
-    patientId =
-      userResult.rows[0].id;
+    // Get next queue number for this doctor on this date
+    const queueResult = await client.query(
+      `
+      SELECT COALESCE(MAX(queue_number), 0) + 1 AS next_queue
+      FROM appointments
+      WHERE doctor_id = $1
+        AND DATE(appointment_date) = DATE($2)
+      `,
+      [doctorId, appointmentDate]
+    );
+    const queueNumber = Number(queueResult.rows[0].next_queue);
+
+    const result = await client.query(
+      `
+      INSERT INTO appointments (
+        id, patient_id, doctor_id, appointment_date, queue_number, status
+      )
+      VALUES (
+        gen_random_uuid(), $1, $2, $3, $4, 'PENDING'
+      )
+      RETURNING *
+      `,
+      [patientId, doctorId, appointmentDate, queueNumber]
+    );
+
+    await client.query("COMMIT");
+    return result.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
-
-  const result =
-  await pool.query(
-    `
-    INSERT INTO appointments (
-      id,
-      patient_id,
-      doctor_id,
-      appointment_date,
-      queue_number,
-      status
-    )
-    VALUES (
-      gen_random_uuid(),
-      $1,
-      $2,
-      $3,
-      NULL,
-      'PENDING'
-    )
-    RETURNING *
-    `,
-    [
-      patientId,
-      doctorId,
-      appointmentDate,
-    ]
-  );
-
-  return result.rows[0];
 }
 
 export async function updateAppointment(
@@ -229,6 +221,7 @@ export async function updateAppointment(
 
     // Assign queue number when
     // moving to CHECKED_IN or WAITING
+    // Queue number is per-doctor per-day
 
     if (
       (status === "CHECKED_IN" ||
@@ -243,6 +236,12 @@ export async function updateAppointment(
               0
             ) AS last_queue
           FROM appointments
+          WHERE doctor_id = (
+            SELECT doctor_id FROM appointments WHERE id = $1
+          )
+          AND DATE(appointment_date) = (
+            SELECT DATE(appointment_date) FROM appointments WHERE id = $1
+          )
         `);
 
       queueNumber =
@@ -319,4 +318,53 @@ export async function getDoctorAppointments(
   );
 
   return result.rows;
+}
+
+export async function getAppointmentsByDoctorId(
+  doctorId: string,
+  search = "",
+  limit = 10,
+  offset = 0
+) {
+  const result = await pool.query(
+    `
+    SELECT
+      a.*,
+      u.name AS patient_name,
+      u.phone AS patient_phone
+    FROM appointments a
+    LEFT JOIN users u ON u.id = a.patient_id
+    WHERE a.doctor_id = $1
+      AND (
+        u.name ILIKE $2
+        OR u.phone ILIKE $2
+      )
+    ORDER BY a.appointment_date DESC
+    LIMIT $3 OFFSET $4
+    `,
+    [doctorId, `%${search}%`, limit, offset]
+  );
+
+  return result.rows;
+}
+
+export async function getAppointmentsByDoctorCount(
+  doctorId: string,
+  search = ""
+) {
+  const result = await pool.query(
+    `
+    SELECT COUNT(*)::int AS count
+    FROM appointments a
+    LEFT JOIN users u ON u.id = a.patient_id
+    WHERE a.doctor_id = $1
+      AND (
+        u.name ILIKE $2
+        OR u.phone ILIKE $2
+      )
+    `,
+    [doctorId, `%${search}%`]
+  );
+
+  return result.rows[0].count;
 }

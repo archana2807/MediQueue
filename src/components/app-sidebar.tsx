@@ -38,6 +38,12 @@ const baseNavItems = [
     items: [],
   },
   {
+    title: "Patients",
+    url: "/patients",
+    icon: HeartPulse,
+    items: [],
+  },
+  {
     title: "Appointments",
     url: "#",
     icon: CalendarDays,
@@ -45,6 +51,18 @@ const baseNavItems = [
       { title: "All Appointments", url: "/appointments" },
       { title: "Book Appointment", url: "/appointments/new" },
     ],
+  },
+  {
+    title: "My Appointments",
+    url: "/my-appointments",
+    icon: CalendarDays,
+    items: [],
+  },
+  {
+    title: "My Patients",
+    url: "/my-patients",
+    icon: HeartPulse,
+    items: [],
   },
   {
     title: "Doctors",
@@ -55,6 +73,12 @@ const baseNavItems = [
   {
     title: "Queue Management",
     url: "/queue",
+    icon: Activity,
+    items: [],
+  },
+  {
+    title: "My Queue",
+    url: "/my-queue",
     icon: Activity,
     items: [],
   },
@@ -72,11 +96,12 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const { state } = useSidebar();
 
   const navItems = baseNavItems.filter((item) => {
-    if (role === "ADMIN") return true;
+    if (role === "ADMIN")
+      return !["/my-appointments", "/my-queue", "/my-patients"].includes(item.url);
     if (role === "DOCTOR")
-      return ["/dashboard", "#", "/queue", "/reports/analyzer", "/profile"].includes(item.url);
+      return ["/dashboard", "/my-appointments", "/my-patients", "/my-queue", "/reports/analyzer"].includes(item.url);
     if (role === "PATIENT")
-      return ["/dashboard", "#", "/profile"].includes(item.url);
+      return ["/dashboard"].includes(item.url);
     return false;
   });
 

@@ -3,9 +3,6 @@ import {
   NextResponse,
 } from "next/server";
 
-
-import { openrouter } from "@/lib/openrouter";
-
 import { retrieveContext } from "@/lib/queries/rag";
 import { handleDoctorSearch } from "@/lib/queries/doctor-agent";
 import { handleAppointment } from "@/lib/queries/appointment-agent";
@@ -13,28 +10,18 @@ import {
   handleSymptoms,
 } from "@/lib/queries/doctor-agent";
 
-
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
+import { chatWithRetry } from "@/lib/ai/chat";
 
 
 async function detectIntent(
   message: string
 ) {
-  const response =
-  await openai.chat.completions.create({
+  const response = await chatWithRetry({
     model: "openai/gpt-oss-120b:free",
-
     temperature: 0,
-
     max_tokens: 20,
-
     messages: [
       {
         role: "user",
@@ -79,14 +66,10 @@ async function handleFAQ(
       )
       .join("\n\n");
 
- const response =
-  await openai.chat.completions.create({
+ const response = await chatWithRetry({
     model: "openai/gpt-oss-120b:free",
-
     temperature: 0.2,
-
     max_tokens: 800,
-
     messages: [
       {
         role: "user",
@@ -204,7 +187,7 @@ export async function POST(
       {
         success: false,
         message:
-          "Something went wrong",
+          "Something went wrong. Please try again.",
       },
       {
         status: 500,

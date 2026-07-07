@@ -218,3 +218,18 @@ export async function getDoctorWorkload(
   return Number(result.rows[0].total);
 }
 
+export async function getDoctorByUserId(
+  userId: string
+) {
+  const result = await pool.query(
+    `
+    SELECT id, user_id, specialization
+    FROM doctors
+    WHERE user_id = $1
+    `,
+    [userId]
+  );
+
+  return result.rows[0] || null;
+}
+

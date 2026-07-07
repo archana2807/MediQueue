@@ -1,10 +1,5 @@
 import { pool } from "@/lib/db";
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
+import { chatWithRetry } from "@/lib/ai/chat";
 
 export async function getAllDoctors() {
   const result = await pool.query(`
@@ -34,7 +29,7 @@ export async function handleDoctorSearch(
       .join("\n");
 
   const response =
-    await openai.chat.completions.create({
+    await chatWithRetry({
       model: "openai/gpt-oss-120b:free",
 
       temperature: 0.2,
@@ -74,7 +69,7 @@ export async function handleSymptoms(
   message: string
 ) {
   const response =
-    await openai.chat.completions.create({
+    await chatWithRetry({
       model: "openai/gpt-oss-120b:free",
 
       temperature: 0,

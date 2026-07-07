@@ -1,42 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getQueueList, getQueueCount } from "@/lib/queries/queue";
 
-import {
-  getQueueList,
-  getQueueCount,
-} from "@/lib/queries/queue";
-
-export async function GET(
-  request: NextRequest
-) {
+export async function GET(request: NextRequest) {
   try {
-    const searchParams =
-      request.nextUrl.searchParams;
+    const searchParams = request.nextUrl.searchParams;
+    const search = searchParams.get("search") || "";
+    const page = Number(searchParams.get("page") || 1);
+    const limit = Number(searchParams.get("limit") || 10);
+    const doctorId = searchParams.get("doctorId") || "";
+    const offset = (page - 1) * limit;
 
-    const search =
-      searchParams.get("search") || "";
-
-    const page = Number(
-      searchParams.get("page") || 1
-    );
-
-    const limit = Number(
-      searchParams.get("limit") || 5
-    );
-
-    const offset =
-      (page - 1) * limit;
-
-    const queue =
-      await getQueueList(
-        search,
-        limit,
-        offset
-      );
-
-    const total =
-      await getQueueCount(
-        search
-      );
+    const queue = await getQueueList(search, limit, offset, doctorId);
+    const total = await getQueueCount(search, doctorId);
 
     return NextResponse.json({
       success: true,
@@ -44,22 +19,13 @@ export async function GET(
       total,
       page,
       limit,
-      totalPages: Math.ceil(
-        total / limit
-      ),
+      totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
     console.error(error);
-
     return NextResponse.json(
-      {
-        success: false,
-        message:
-          "Failed to fetch queue",
-      },
-      {
-        status: 500,
-      }
+      { success: false, message: "Failed to fetch queue" },
+      { status: 500 }
     );
   }
 }

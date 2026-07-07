@@ -1,73 +1,47 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { getStatusClass, formatDateTime } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import DataTable from "@/components/common/data-table";
-import QueueActions from "./queue-actions";
+import { useDebounce } from "use-debounce";
+import { getStatusClass, formatDateTime } from "@/lib/utils";
+import QueueActions from "@/components/queue/queue-actions";
 import DoctorNotesModal from "@/components/common/doctor-notes-modal";
 import { toast } from "sonner";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useDebounce } from "use-debounce";
-import { Button } from "../ui/button";
-import { Stethoscope } from "lucide-react";
+import { User } from "lucide-react";
 
 type QueueItem = {
   id: string;
   queue_number: number | null;
-  patient_name: string;
-  doctor_name: string;
-  doctor_id: string;
-  appointment_date: string;
   status: string;
+  appointment_date: string;
+  patient_name: string;
+  patient_phone: string;
 };
 
-type Doctor = {
-  id: string;
-  name: string;
-  specialization: string;
-};
-
-export default function QueueTable() {
+export default function DoctorQueueTable() {
   const [search, setSearch] = useState("");
-  const [debouncedSearch] = useDebounce(search, 500);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [selectedDoctorId, setSelectedDoctorId] = useState("");
+  const [debouncedSearch] = useDebounce(search, 500);
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
   const [doctorNotes, setDoctorNotes] = useState("");
   const [selectedAppointmentId, setSelectedAppointmentId] = useState("");
 
-  // Fetch doctors list for filter dropdown
-  const { data: doctorsData } = useQuery<{ data: Doctor[] }>({
-    queryKey: ["doctors-list"],
-    queryFn: async () => {
-      const res = await fetch("/api/doctors?limit=100");
-      return res.json();
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const doctors = doctorsData?.data ?? [];
-
   const { data, isLoading, isError, error, refetch } = useQuery<{
     data: QueueItem[];
     total: number;
     totalPages: number;
   }>({
-    queryKey: ["queue", page, pageSize, debouncedSearch, selectedDoctorId],
+    queryKey: ["my-queue", page, pageSize, debouncedSearch],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: String(pageSize),
-        search: debouncedSearch,
-      });
-      if (selectedDoctorId) {
-        params.set("doctorId", selectedDoctorId);
-      }
-      const response = await fetch(`/api/queue?${params}`);
+      const response = await fetch(
+        `/api/my-queue?page=${page}&limit=${pageSize}&search=${debouncedSearch}`
+      );
       if (!response.ok) {
         throw new Error("Failed to load queue");
       }
@@ -107,8 +81,8 @@ export default function QueueTable() {
       setDoctorNotes("");
       setSelectedAppointmentId("");
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["queue"] }),
-        queryClient.invalidateQueries({ queryKey: ["appointments"] }),
+        queryClient.invalidateQueries({ queryKey: ["my-queue"] }),
+        queryClient.invalidateQueries({ queryKey: ["my-appointments"] }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
       ]);
     },
@@ -150,37 +124,6 @@ export default function QueueTable() {
 
   return (
     <>
-      <div className="mb-4 flex items-center gap-3">
-        <Stethoscope className="size-4 text-muted-foreground" />
-        <select
-          value={selectedDoctorId}
-          onChange={(e) => {
-            setSelectedDoctorId(e.target.value);
-            setPage(1);
-          }}
-          className="h-9 rounded-md border bg-background px-3 text-sm"
-        >
-          <option value="">All Doctors</option>
-          {doctors.map((doc) => (
-            <option key={doc.id} value={doc.id}>
-              {doc.name} ({doc.specialization})
-            </option>
-          ))}
-        </select>
-        {selectedDoctorId && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSelectedDoctorId("");
-              setPage(1);
-            }}
-          >
-            Clear
-          </Button>
-        )}
-      </div>
-
       <DataTable
         loading={isLoading}
         data={queue}
@@ -204,28 +147,24 @@ export default function QueueTable() {
             label: "Queue #",
             render: (value: number | null) =>
               value ? (
-                <Badge className="bg-emerald-500/10 text-emerald-400 font-bold text-sm">
+                <Badge className="bg-emerald-500/10 text-emerald-400 font-bold text-base">
                   Q{value}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-xs text-muted-foreground">
+                <Badge variant="outline" className="text-xs">
                   --
                 </Badge>
               ),
           },
           {
-            key: "doctor_name",
-            label: "Doctor",
-            render: (value: string) => (
-              <span className="flex items-center gap-1.5 font-medium">
-                <Stethoscope className="size-3.5 text-cyan-400" />
-                {value}
-              </span>
-            ),
-          },
-          {
             key: "patient_name",
             label: "Patient",
+            render: (value: string) => (
+              <span className="flex items-center gap-2 font-medium">
+                <User className="size-4 text-muted-foreground" />
+                {value || "Unknown"}
+              </span>
+            ),
           },
           {
             key: "appointment_date",
@@ -246,9 +185,8 @@ export default function QueueTable() {
             appointmentId={item.id}
             status={item.status}
             onSuccess={() => {
-              queryClient.invalidateQueries({ queryKey: ["queue"] });
-              queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-              queryClient.invalidateQueries({ queryKey: ["appointments"] });
+              queryClient.invalidateQueries({ queryKey: ["my-queue"] });
+              queryClient.invalidateQueries({ queryKey: ["my-appointments"] });
             }}
             onComplete={(appointmentId) => {
               setSelectedAppointmentId(appointmentId);

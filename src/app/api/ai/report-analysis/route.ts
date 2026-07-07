@@ -2,12 +2,7 @@ import { NextResponse } from "next/server";
 
 import PDFParser from "pdf2json";
 
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
+import { chatWithRetry } from "@/lib/ai/chat";
 
 export async function POST(
   request: Request
@@ -223,7 +218,7 @@ The file may be scanned or image-based.
     }
 
     const response =
-  await openai.chat.completions.create({
+  await chatWithRetry({
     model: "openai/gpt-oss-120b:free",
 
     temperature: 0.1,

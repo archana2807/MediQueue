@@ -18,6 +18,7 @@ type Appointment = {
   doctor_name: string;
   appointment_date: string;
   status: string;
+  queue_number: number | null;
 };
 
 export default function AppointmentsTable() {
@@ -133,6 +134,20 @@ const totalPages =
         setPage(1);
       }}
       columns={[
+        {
+          key: "queue_number",
+          label: "Queue #",
+          render: (value: number | null) =>
+            value ? (
+              <Badge className="bg-emerald-500/10 text-emerald-400 font-bold text-sm">
+                Q{value}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-xs text-muted-foreground">
+                --
+              </Badge>
+            ),
+        },
         { key: "patient_name", label: "Patient" },
         { key: "doctor_name", label: "Doctor" },
         { key: "appointment_date", label: "Appointment Date" },
@@ -162,12 +177,12 @@ const totalPages =
                 </Button>
               </Link>
             )}
-            <Link href={`/patients/${appointment.patient_id}/history`}>
+            <Link href={`/patients/${appointment.patient_id}`}>
               <Button
                 size="icon"
                 variant="ghost"
                 className="h-8 w-8 hover:bg-cyan-500/10"
-                title="View History"
+                title="View Patient"
               >
                 <History className="h-4 w-4 text-cyan-400" />
               </Button>

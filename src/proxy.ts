@@ -64,6 +64,18 @@ export default withAuth(
       );
     }
 
+    // DOCTOR only routes
+    if (
+      (pathname.startsWith("/my-appointments") ||
+        pathname.startsWith("/my-queue") ||
+        pathname.startsWith("/my-patients")) &&
+      role !== "DOCTOR"
+    ) {
+      return NextResponse.redirect(
+        new URL("/dashboard", req.url)
+      );
+    }
+
     return NextResponse.next();
   },
   {
@@ -81,5 +93,9 @@ export const config = {
     "/doctors/:path*",
     "/queue/:path*",
     "/appointments/:path*",
+    "/patients/:path*",
+    "/my-appointments/:path*",
+    "/my-queue/:path*",
+    "/my-patients/:path*",
   ],
 };
