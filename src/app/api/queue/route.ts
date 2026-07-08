@@ -8,10 +8,11 @@ export async function GET(request: NextRequest) {
     const page = Number(searchParams.get("page") || 1);
     const limit = Number(searchParams.get("limit") || 10);
     const doctorId = searchParams.get("doctorId") || "";
+    const date = searchParams.get("date") || "";
     const offset = (page - 1) * limit;
 
-    const queue = await getQueueList(search, limit, offset, doctorId);
-    const total = await getQueueCount(search, doctorId);
+    const queue = await getQueueList(search, limit, offset, doctorId, date);
+    const total = await getQueueCount(search, doctorId, date);
 
     return NextResponse.json({
       success: true,

@@ -1,4 +1,10 @@
 import { pool } from "@/lib/db";
+import {
+  getPatientMedications,
+  getPatientAllergies,
+  getPatientConditions,
+  getPatientObservations,
+} from "./clinical-data";
 
 export interface PatientContext {
   patientOneLiner: string;
@@ -72,21 +78,34 @@ export async function getPatientContext(
   const visits = visitsResult.rows;
   const reports = reportsResult.rows;
 
-  const activeProblems = deriveActiveProblems(visits);
-  const currentMedications = deriveMedications(visits);
-  const allergies = deriveAllergies(reports);
-  const relevantObservations = deriveObservations(visits, reports);
+  // Query structured clinical data directly from tables
+  const medications = await getPatientMedications(patientId);
+  const allergies = await getPatientAllergies(patientId);
+  const conditions = await getPatientConditions(patientId);
+  const observations = await getPatientObservations(patientId);
+
+  const activeProblems = conditions
+    .filter((c) => c.status === "active")
+    .map((c) => c.condition_name);
+
+  const currentMedications = medications.map(
+    (m) => m.dosage ? `${m.name} ${m.dosage} ${m.frequency || ""}`.trim() : m.name
+  );
+
+  const allergyList = allergies.length > 0
+    ? allergies.map((a) => a.severity ? `${a.allergen} (${a.severity})` : a.allergen)
+    : ["No known allergies documented"];
+
+  const observationList = observations.map((o) => o.observation);
+
   const riskFlags = deriveRiskFlags(visits);
   const missingInformation = deriveMissingInfo(
     activeProblems,
     currentMedications,
-    allergies,
-    relevantObservations
+    allergyList,
+    observationList
   );
-  const evidenceReferences = buildEvidenceReferences(
-    visits,
-    reports
-  );
+  const evidenceReferences = buildEvidenceReferences(visits, reports);
 
   const lastVisit = visits[0];
   const statusSummary =
@@ -101,8 +120,8 @@ export async function getPatientContext(
     patientOneLiner,
     activeProblems,
     currentMedications,
-    allergies,
-    relevantObservations,
+    allergies: allergyList,
+    relevantObservations: observationList,
     riskFlags,
     missingInformation,
     evidenceReferences,
@@ -110,101 +129,6 @@ export async function getPatientContext(
     recentVisits: visits,
     reports,
   };
-}
-
-function deriveActiveProblems(
-  visits: Record<string, unknown>[]
-): string[] {
-  const problems = new Set<string>();
-  for (const visit of visits) {
-    if (visit.status === "COMPLETED") {
-      const summary = visit.ai_summary as string | null;
-      const notes = visit.doctor_notes as string | null;
-      const text = summary || notes || "";
-      const lines = text.split("\n").filter((l) => l.trim());
-      for (const line of lines) {
-        const trimmed = line.replace(/^[-*•]\s*/, "").trim();
-        if (
-          trimmed.length > 5 &&
-          trimmed.length < 200 &&
-          !trimmed.startsWith("#") &&
-          !trimmed.startsWith("Advice") &&
-          !trimmed.startsWith("Diet")
-        ) {
-          problems.add(trimmed);
-        }
-      }
-    }
-  }
-  return Array.from(problems).slice(0, 8);
-}
-
-function deriveMedications(
-  visits: Record<string, unknown>[]
-): string[] {
-  const meds = new Set<string>();
-  for (const visit of visits) {
-    const summary = (visit.ai_summary as string) || "";
-    const medSection = extractSection(summary, "Medication");
-    if (medSection) {
-      const items = medSection
-        .split("\n")
-        .map((l) =>
-          l.replace(/^[-*•]\s*/, "").trim()
-        )
-        .filter((l) => l.length > 2);
-      items.forEach((m) => meds.add(m));
-    }
-  }
-  return Array.from(meds).slice(0, 10);
-}
-
-function deriveAllergies(
-  reports: Record<string, unknown>[]
-): string[] {
-  const allergies: string[] = [];
-  for (const report of reports) {
-    const analysis = (report.ai_analysis as string) || "";
-    if (
-      analysis.toLowerCase().includes("allerg")
-    ) {
-      const lines = analysis.split("\n");
-      for (const line of lines) {
-        if (
-          line.toLowerCase().includes("allerg")
-        ) {
-          allergies.push(
-            line.replace(/^[-*•]\s*/, "").trim()
-          );
-        }
-      }
-    }
-  }
-  return allergies.length > 0
-    ? allergies.slice(0, 5)
-    : ["No known allergies documented"];
-}
-
-function deriveObservations(
-  visits: Record<string, unknown>[],
-  reports: Record<string, unknown>[]
-): string[] {
-  const obs: string[] = [];
-  for (const visit of visits.slice(0, 3)) {
-    if (visit.ai_summary) {
-      obs.push(
-        `Visit ${formatDate(visit.appointment_date)}: ${(visit.ai_summary as string).slice(0, 150)}...`
-      );
-    }
-  }
-  for (const report of reports.slice(0, 2)) {
-    if (report.ai_analysis) {
-      obs.push(
-        `Report "${report.report_name}": ${(report.ai_analysis as string).slice(0, 150)}...`
-      );
-    }
-  }
-  return obs.slice(0, 5);
 }
 
 function deriveRiskFlags(
@@ -287,18 +211,6 @@ function buildEvidenceReferences(
     });
   }
   return refs;
-}
-
-function extractSection(
-  text: string,
-  sectionName: string
-): string | null {
-  const regex = new RegExp(
-    `###?\\s*${sectionName}[\\s\\S]*?(?=###?\\s|$)`,
-    "i"
-  );
-  const match = text.match(regex);
-  return match ? match[0].trim() : null;
 }
 
 function formatDate(date: unknown): string {

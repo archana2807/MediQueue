@@ -6,7 +6,8 @@ import {
 
 import { findDoctor } from "./doctors";
 
-import { chatWithRetry } from "@/lib/ai/chat";
+import { openai } from "@/lib/ai/client";
+import { MODEL } from "@/lib/ai/model";
 const WORKING_HOURS = {
   start: 9,
   end: 18,
@@ -55,8 +56,8 @@ export async function extractAppointmentDetails(
       .split("T")[0];
 
   const response =
-    await chatWithRetry({
-      model: "openai/gpt-oss-120b:free",
+    await openai.chat.completions.create({
+      model: MODEL,
 
       temperature: 0,
 

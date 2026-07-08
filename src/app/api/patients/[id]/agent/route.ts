@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPatientContext } from "@/lib/queries/patient-context";
-import { chatWithRetry } from "@/lib/ai/chat";
+import { openai } from "@/lib/ai/client";
+import { MODEL } from "@/lib/ai/model";
 
 const ALLOWED_TASKS = [
   "handover_summary",
@@ -19,33 +20,27 @@ const TASK_LABELS: Record<AllowedTask, string> = {
 };
 
 const TASK_PROMPTS: Record<AllowedTask, string> = {
-  handover_summary: `Generate a concise handover summary for this patient. Include:
-- Current status and recent visit context
-- Active problems
-- Current medications
-- Key concerns for the next clinician
-Format as a structured clinical handover note.`,
+  handover_summary: `Write a brief handover in this exact format (no extra text):
 
-  patient_summary: `Generate a comprehensive patient summary for a clinician who is seeing this patient for the first time. Include:
-- Patient overview
-- Relevant medical history
-- Current conditions and medications
-- Key points from recent visits
-- Areas needing attention`,
+**Status:** [one line]
+**Problems:** [comma-separated list]
+**Meds:** [comma-separated list]
+**Allergies:** [comma-separated list]
+**Concerns:** [2-3 items, one line each]`,
 
-  risk_flags: `Analyze this patient's data and identify clinical risk flags. Include:
-- Any concerning patterns in visit history
-- Time gaps between visits
-- Incomplete documentation risks
-- Clinical concerns based on available data
-Present as a risk assessment with severity levels.`,
+  patient_summary: `Write a brief patient summary in this exact format (no extra text):
 
-  missing_information: `Analyze what information is missing from this patient's record that would be important for clinical decision-making. Include:
-- Missing vital signs or lab results
-- Incomplete medication history
-- Missing allergy documentation
-- Gaps in visit follow-up
-Prioritize by clinical importance.`,
+**Overview:** [one line]
+**Conditions:** [comma-separated list]
+**Meds:** [comma-separated list]
+**Allergies:** [comma-separated list]
+**Watch for:** [2-3 items]`,
+
+  risk_flags: `List top 3 risks only, one line each:
+- [Risk]: [severity] - [one line reason]`,
+
+  missing_information: `List top 3 missing items only, one line each:
+- [What's missing]: [why it matters]`,
 };
 
 function isAllowedTask(
@@ -99,30 +94,32 @@ export async function POST(
     let usedMock = false;
 
     if (process.env.OPENROUTER_API_KEY) {
-      const response = await chatWithRetry({
-        model: "openai/gpt-oss-120b:free",
+      const response = await openai.chat.completions.create({
+        model: MODEL,
         temperature: 0.3,
-        max_tokens: 1000,
+        max_tokens: 400,
         messages: [
           {
             role: "system",
-            content: `You are a clinical decision support agent. You assist clinicians with patient summaries, handover notes, risk assessments, and identifying missing information. You do NOT provide diagnoses or treatment recommendations. Always include a disclaimer that this is AI-generated and requires clinician review.`,
+            content: `You are a clinical agent. Output ONLY what is requested, nothing else. Be extremely brief. No extra sections, no disclaimers, no headers.`,
           },
           {
             role: "user",
             content: `${TASK_PROMPTS[taskType]}
 
 PATIENT CONTEXT:
-${JSON.stringify(contextForAgent, null, 2)}
-
-Format your response with clear sections. Include "Evidence References" and "Missing Info" sections at the end.`,
+${JSON.stringify(contextForAgent, null, 2)}`,
           },
         ],
       });
 
       draftOutput =
-        response.choices?.[0]?.message?.content ||
-        "Unable to generate output.";
+        response.choices?.[0]?.message?.content || "";
+
+      if (!draftOutput) {
+        console.error("AGENT EMPTY RESPONSE:", JSON.stringify(response));
+        draftOutput = "No output generated. Please try again.";
+      }
     } else {
       draftOutput = generateMockOutput(
         taskType,

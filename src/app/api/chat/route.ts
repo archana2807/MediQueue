@@ -12,14 +12,15 @@ import {
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { chatWithRetry } from "@/lib/ai/chat";
+import { openai } from "@/lib/ai/client";
+import { MODEL } from "@/lib/ai/model";
 
 
 async function detectIntent(
   message: string
 ) {
-  const response = await chatWithRetry({
-    model: "openai/gpt-oss-120b:free",
+  const response = await openai.chat.completions.create({
+    model: MODEL,
     temperature: 0,
     max_tokens: 20,
     messages: [
@@ -66,8 +67,8 @@ async function handleFAQ(
       )
       .join("\n\n");
 
- const response = await chatWithRetry({
-    model: "openai/gpt-oss-120b:free",
+ const response = await openai.chat.completions.create({
+    model: MODEL,
     temperature: 0.2,
     max_tokens: 800,
     messages: [

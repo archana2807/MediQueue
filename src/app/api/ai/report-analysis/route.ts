@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 import PDFParser from "pdf2json";
 
-import { chatWithRetry } from "@/lib/ai/chat";
+import { openai } from "@/lib/ai/client";
+import { MODEL } from "@/lib/ai/model";
 
 export async function POST(
   request: Request
@@ -218,8 +219,8 @@ The file may be scanned or image-based.
     }
 
     const response =
-  await chatWithRetry({
-    model: "openai/gpt-oss-120b:free",
+  await openai.chat.completions.create({
+    model: MODEL,
 
     temperature: 0.1,
 

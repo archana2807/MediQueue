@@ -17,15 +17,21 @@ type QueueItem = {
   queue_number: number | null;
   status: string;
   appointment_date: string;
+  patient_id: string;
   patient_name: string;
   patient_phone: string;
 };
+
+function getTodayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export default function DoctorQueueTable() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [debouncedSearch] = useDebounce(search, 500);
+  const [selectedDate, setSelectedDate] = useState(getTodayStr);
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
@@ -37,11 +43,15 @@ export default function DoctorQueueTable() {
     total: number;
     totalPages: number;
   }>({
-    queryKey: ["my-queue", page, pageSize, debouncedSearch],
+    queryKey: ["my-queue", page, pageSize, debouncedSearch, selectedDate],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/my-queue?page=${page}&limit=${pageSize}&search=${debouncedSearch}`
-      );
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(pageSize),
+        search: debouncedSearch,
+        date: selectedDate,
+      });
+      const response = await fetch(`/api/my-queue?${params}`);
       if (!response.ok) {
         throw new Error("Failed to load queue");
       }
@@ -55,10 +65,17 @@ export default function DoctorQueueTable() {
       appointmentId,
       notes,
       summary,
+      clinicalData,
     }: {
       appointmentId: string;
       notes: string;
       summary: string;
+      clinicalData?: {
+        conditions: string[];
+        medications: string[];
+        allergies: string[];
+        observations: string[];
+      };
     }) => {
       const response = await fetch(`/api/queue/${appointmentId}`, {
         method: "PUT",
@@ -67,6 +84,12 @@ export default function DoctorQueueTable() {
           status: "COMPLETED",
           doctor_notes: notes,
           ai_summary: summary,
+          ...(clinicalData && {
+            conditions: clinicalData.conditions,
+            medications: clinicalData.medications,
+            allergies: clinicalData.allergies,
+            observations: clinicalData.observations,
+          }),
         }),
       });
       const result = await response.json();
@@ -87,11 +110,20 @@ export default function DoctorQueueTable() {
       ]);
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      toast.error(err instanceof Error ? err.message : "Failed to complete appointment");
     },
   });
 
-  function handleComplete(notes: string, summary: string) {
+  function handleComplete(
+    notes: string,
+    summary: string,
+    clinicalData?: {
+      conditions: string[];
+      medications: string[];
+      allergies: string[];
+      observations: string[];
+    }
+  ) {
     if (!notes.trim()) {
       toast.error("Please enter doctor notes");
       return;
@@ -100,6 +132,7 @@ export default function DoctorQueueTable() {
       appointmentId: selectedAppointmentId,
       notes,
       summary,
+      clinicalData,
     });
   }
 
@@ -124,6 +157,29 @@ export default function DoctorQueueTable() {
 
   return (
     <>
+      <div className="mb-4 flex items-center gap-3">
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => {
+            setSelectedDate(e.target.value);
+            setPage(1);
+          }}
+          className="h-9 rounded-md border bg-background px-3 text-sm"
+        />
+        {selectedDate !== getTodayStr() && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedDate(getTodayStr());
+              setPage(1);
+            }}
+          >
+            Today
+          </Button>
+        )}
+      </div>
       <DataTable
         loading={isLoading}
         data={queue}
@@ -183,6 +239,7 @@ export default function DoctorQueueTable() {
         actions={(item) => (
           <QueueActions
             appointmentId={item.id}
+            patientId={item.patient_id}
             status={item.status}
             onSuccess={() => {
               queryClient.invalidateQueries({ queryKey: ["my-queue"] });

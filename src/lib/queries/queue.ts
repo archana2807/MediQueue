@@ -4,7 +4,8 @@ export async function getQueueList(
   search = "",
   limit = 10,
   offset = 0,
-  doctorId = ""
+  doctorId = "",
+  date = ""
 ) {
   let whereClause = `
       (
@@ -26,6 +27,12 @@ export async function getQueueList(
     paramIndex++;
   }
 
+  if (date) {
+    whereClause += ` AND DATE(a.appointment_date) = $${paramIndex}`;
+    params.push(date);
+    paramIndex++;
+  }
+
   const result = await query(
     `
     SELECT
@@ -34,6 +41,7 @@ export async function getQueueList(
       a.status,
       a.appointment_date,
       a.doctor_id,
+      a.patient_id,
       u.name AS patient_name,
       u.phone AS patient_phone,
       du.name AS doctor_name
@@ -53,7 +61,8 @@ export async function getQueueList(
 
 export async function getQueueCount(
   search = "",
-  doctorId = ""
+  doctorId = "",
+  date = ""
 ) {
   let whereClause = `
       (
@@ -72,6 +81,12 @@ export async function getQueueCount(
   if (doctorId) {
     whereClause += ` AND a.doctor_id = $${paramIndex}`;
     params.push(doctorId);
+    paramIndex++;
+  }
+
+  if (date) {
+    whereClause += ` AND DATE(a.appointment_date) = $${paramIndex}`;
+    params.push(date);
     paramIndex++;
   }
 
@@ -140,4 +155,3 @@ export async function updateQueueStatus(
     client.release();
   }
 }
-

@@ -1,5 +1,6 @@
 import { pool } from "@/lib/db";
-import { chatWithRetry } from "@/lib/ai/chat";
+import { openai } from "@/lib/ai/client";
+import { MODEL } from "@/lib/ai/model";
 
 export async function getAllDoctors() {
   const result = await pool.query(`
@@ -29,8 +30,8 @@ export async function handleDoctorSearch(
       .join("\n");
 
   const response =
-    await chatWithRetry({
-      model: "openai/gpt-oss-120b:free",
+    await openai.chat.completions.create({
+      model: MODEL,
 
       temperature: 0.2,
 
@@ -69,8 +70,8 @@ export async function handleSymptoms(
   message: string
 ) {
   const response =
-    await chatWithRetry({
-      model: "openai/gpt-oss-120b:free",
+    await openai.chat.completions.create({
+      model: MODEL,
 
       temperature: 0,
 

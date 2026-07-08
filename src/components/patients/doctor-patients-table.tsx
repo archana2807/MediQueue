@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import DataTable from "@/components/common/data-table";
 import { useDebounce } from "use-debounce";
-import { Mail, Phone, Calendar } from "lucide-react";
+import { Mail, Phone, Calendar, Eye } from "lucide-react";
 
 type Patient = {
   id: string;
@@ -129,6 +130,20 @@ export default function DoctorPatientsTable() {
           ),
         },
       ]}
+      actions={(patient) => (
+        <div className="flex items-center gap-1">
+          <Link href={`/patients/${patient.id}`}>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 hover:bg-emerald-500/10"
+              title="View Patient"
+            >
+              <Eye className="h-4 w-4 text-emerald-400" />
+            </Button>
+          </Link>
+        </div>
+      )}
     />
   );
 }

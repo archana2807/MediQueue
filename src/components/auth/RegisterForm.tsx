@@ -172,14 +172,6 @@ return ( <Card className="w-full max-w-md shadow-lg"> <CardHeader> <CardTitle>Cr
             : "Create Account"}
         </Button>
 
-        {/* <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-        >
-          Continue with Google
-        </Button> */}
-
         <FieldDescription className="text-center">
           Already have an account?{" "}
           <Link

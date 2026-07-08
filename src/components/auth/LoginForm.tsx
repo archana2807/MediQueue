@@ -119,13 +119,6 @@ Login to your account </CardTitle>
               <FieldLabel htmlFor="password">
                 Password
               </FieldLabel>
-
-              {/* <Link
-                href="/forgot-password"
-                className="ml-auto text-sm hover:underline"
-              >
-                Forgot Password?
-              </Link> */}
             </div>
 
             <Input
@@ -151,15 +144,6 @@ Login to your account </CardTitle>
                 ? "Signing In..."
                 : "Login"}
             </Button>
-
-            {/* <Button
-              variant="outline"
-              type="button"
-              className="w-full"
-              disabled={loading}
-            >
-              Login with Google
-            </Button> */}
 
             <FieldDescription className="text-center">
               Don't have an account?{" "}

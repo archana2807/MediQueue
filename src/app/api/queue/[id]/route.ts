@@ -41,7 +41,13 @@ export async function PUT(
       await createAppointmentNote(
         id,
         body.doctor_notes || "",
-        body.ai_summary || ""
+        body.ai_summary || "",
+        {
+          conditions: body.conditions || [],
+          medications: body.medications || [],
+          allergies: body.allergies || [],
+          observations: body.observations || [],
+        }
       );
     }
 

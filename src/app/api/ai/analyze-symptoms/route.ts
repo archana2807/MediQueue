@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { chatWithRetry } from "@/lib/ai/chat";
+import { openai } from "@/lib/ai/client";
+import { MODEL } from "@/lib/ai/model";
 import { pool } from "@/lib/db";
 
 
@@ -38,8 +39,8 @@ export async function POST(request: NextRequest) {
       .map((d) => `${d.id}|${d.name}|${d.specialization}`)
       .join("\n");
 
-    const response = await chatWithRetry({
-      model: "openai/gpt-oss-120b:free",
+    const response = await openai.chat.completions.create({
+      model: MODEL,
       temperature: 0,
       max_tokens: 300,
       messages: [

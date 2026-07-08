@@ -101,7 +101,7 @@ export default function LoginPage() {
               </div>
 
               <a
-                href="/reports/demo-flow.pdf"
+                href="/reports/demo-flow.md"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium transition-colors pt-1"

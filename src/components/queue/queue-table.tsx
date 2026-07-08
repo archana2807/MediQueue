@@ -16,6 +16,7 @@ type QueueItem = {
   id: string;
   queue_number: number | null;
   patient_name: string;
+  patient_id: string;
   doctor_name: string;
   doctor_id: string;
   appointment_date: string;
@@ -28,12 +29,17 @@ type Doctor = {
   specialization: string;
 };
 
+function getTodayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export default function QueueTable() {
   const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebounce(search, 500);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedDoctorId, setSelectedDoctorId] = useState("");
+  const [selectedDate, setSelectedDate] = useState(getTodayStr);
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
@@ -57,12 +63,13 @@ export default function QueueTable() {
     total: number;
     totalPages: number;
   }>({
-    queryKey: ["queue", page, pageSize, debouncedSearch, selectedDoctorId],
+    queryKey: ["queue", page, pageSize, debouncedSearch, selectedDoctorId, selectedDate],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),
         limit: String(pageSize),
         search: debouncedSearch,
+        date: selectedDate,
       });
       if (selectedDoctorId) {
         params.set("doctorId", selectedDoctorId);
@@ -81,10 +88,17 @@ export default function QueueTable() {
       appointmentId,
       notes,
       summary,
+      clinicalData,
     }: {
       appointmentId: string;
       notes: string;
       summary: string;
+      clinicalData?: {
+        conditions: string[];
+        medications: string[];
+        allergies: string[];
+        observations: string[];
+      };
     }) => {
       const response = await fetch(`/api/queue/${appointmentId}`, {
         method: "PUT",
@@ -93,6 +107,12 @@ export default function QueueTable() {
           status: "COMPLETED",
           doctor_notes: notes,
           ai_summary: summary,
+          ...(clinicalData && {
+            conditions: clinicalData.conditions,
+            medications: clinicalData.medications,
+            allergies: clinicalData.allergies,
+            observations: clinicalData.observations,
+          }),
         }),
       });
       const result = await response.json();
@@ -113,11 +133,20 @@ export default function QueueTable() {
       ]);
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      toast.error(err instanceof Error ? err.message : "Failed to complete appointment");
     },
   });
 
-  function handleComplete(notes: string, summary: string) {
+  function handleComplete(
+    notes: string,
+    summary: string,
+    clinicalData?: {
+      conditions: string[];
+      medications: string[];
+      allergies: string[];
+      observations: string[];
+    }
+  ) {
     if (!notes.trim()) {
       toast.error("Please enter doctor notes");
       return;
@@ -126,6 +155,7 @@ export default function QueueTable() {
       appointmentId: selectedAppointmentId,
       notes,
       summary,
+      clinicalData,
     });
   }
 
@@ -150,7 +180,16 @@ export default function QueueTable() {
 
   return (
     <>
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => {
+            setSelectedDate(e.target.value);
+            setPage(1);
+          }}
+          className="h-9 rounded-md border bg-background px-3 text-sm"
+        />
         <Stethoscope className="size-4 text-muted-foreground" />
         <select
           value={selectedDoctorId}
@@ -167,12 +206,13 @@ export default function QueueTable() {
             </option>
           ))}
         </select>
-        {selectedDoctorId && (
+        {(selectedDoctorId || selectedDate !== getTodayStr()) && (
           <Button
             variant="ghost"
             size="sm"
             onClick={() => {
               setSelectedDoctorId("");
+              setSelectedDate(getTodayStr());
               setPage(1);
             }}
           >
@@ -244,6 +284,7 @@ export default function QueueTable() {
         actions={(item) => (
           <QueueActions
             appointmentId={item.id}
+            patientId={item.patient_id}
             status={item.status}
             onSuccess={() => {
               queryClient.invalidateQueries({ queryKey: ["queue"] });

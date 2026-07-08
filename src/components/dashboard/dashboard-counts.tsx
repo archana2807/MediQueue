@@ -1,5 +1,3 @@
-// components/dashboard/dashboard-counts.tsx
-
 import {
   CalendarDays,
   Clock3,

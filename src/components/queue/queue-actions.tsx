@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Phone, CheckCircle2, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Phone, CheckCircle2, Loader2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
   appointmentId: string;
+  patientId: string;
   status: string;
   onSuccess: () => void;
   onComplete: (appointmentId: string) => void;
@@ -14,6 +16,7 @@ type Props = {
 
 export default function QueueActions({
   appointmentId,
+  patientId,
   status,
   onSuccess,
   onComplete,
@@ -39,7 +42,7 @@ export default function QueueActions({
       onSuccess();
     } catch (error) {
       console.error(error);
-      toast.error("Something went wrong");
+      toast.error("Failed to update queue status");
     } finally {
       setLoading(false);
     }
@@ -47,6 +50,17 @@ export default function QueueActions({
 
   return (
     <div className="flex items-center gap-1">
+      <Link href={`/patients/${patientId}`}>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8 hover:bg-foreground/5"
+          title="View Patient Details"
+        >
+          <User className="h-4 w-4 text-muted-foreground" />
+        </Button>
+      </Link>
+
       {status === "CONFIRMED" && (
         <Button
           size="icon"

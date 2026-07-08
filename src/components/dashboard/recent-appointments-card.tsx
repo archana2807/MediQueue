@@ -1,5 +1,3 @@
-// components/dashboard/recent-appointments-table.tsx
-
 import {
   Card,
   CardContent,

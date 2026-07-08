@@ -20,7 +20,6 @@ export default function DashboardContent() {
     </div>
   );
        }
-console.log("dashboard", data);
   return (
     <>
       <DashboardCounts

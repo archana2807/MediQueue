@@ -10,7 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
-import { Trash2, FileText, Clock } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Trash2, FileText, Clock, Inbox } from "lucide-react";
 
 interface Draft {
   id: string;
@@ -26,6 +27,13 @@ const TASK_LABELS: Record<string, string> = {
   patient_summary: "Patient Summary",
   risk_flags: "Risk Flags",
   missing_information: "Missing Information",
+};
+
+const TASK_COLORS: Record<string, string> = {
+  handover_summary: "border-blue-500/20 bg-blue-500/10 text-blue-500",
+  patient_summary: "border-violet-500/20 bg-violet-500/10 text-violet-500",
+  risk_flags: "border-amber-500/20 bg-amber-500/10 text-amber-500",
+  missing_information: "border-orange-500/20 bg-orange-500/10 text-orange-500",
 };
 
 export default function SavedDraftsPanel({
@@ -50,10 +58,9 @@ export default function SavedDraftsPanel({
 
   const deleteMutation = useMutation({
     mutationFn: async (draftId: string) => {
-      const response = await fetch(
-        `/api/drafts/${draftId}`,
-        { method: "DELETE" }
-      );
+      const response = await fetch(`/api/drafts/${draftId}`, {
+        method: "DELETE",
+      });
       if (!response.ok) {
         throw new Error("Failed to delete draft");
       }
@@ -69,10 +76,12 @@ export default function SavedDraftsPanel({
   const drafts: Draft[] = draftsData?.data || [];
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="size-5 text-violet-400" />
+    <Card className="border-border/60 overflow-hidden">
+      <CardHeader className="border-b border-border/60 bg-gradient-to-r from-violet-500/[0.04] to-transparent pb-4">
+        <CardTitle className="flex items-center gap-2.5 text-base">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10">
+            <FileText className="size-4 text-violet-500" />
+          </div>
           Saved Drafts
           {drafts.length > 0 && (
             <Badge variant="secondary" className="text-xs">
@@ -80,29 +89,39 @@ export default function SavedDraftsPanel({
             </Badge>
           )}
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Agent-generated outputs saved for this patient.
-        </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-5">
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex items-center justify-center py-12">
             <Spinner className="size-6 animate-spin-slow" />
           </div>
         ) : drafts.length === 0 ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">
-            No saved drafts yet. Use the Agent panel to generate and save clinical outputs.
+          <div className="flex flex-col items-center gap-3 py-12 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <Inbox className="size-6 text-muted-foreground/60" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
+                No saved drafts yet
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground/60">
+                Use the Agent panel to generate and save clinical outputs.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
             {drafts.map((draft) => (
               <div
                 key={draft.id}
-                className="rounded-lg border p-4"
+                className="rounded-xl border border-border/60 bg-muted/20 p-4 transition-colors hover:bg-muted/30"
               >
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
+                    <Badge
+                      variant="outline"
+                      className={`text-xs ${TASK_COLORS[draft.task_type] || ""}`}
+                    >
                       {TASK_LABELS[draft.task_type] || draft.task_type}
                     </Badge>
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -121,12 +140,12 @@ export default function SavedDraftsPanel({
                     size="sm"
                     onClick={() => deleteMutation.mutate(draft.id)}
                     disabled={deleteMutation.isPending}
-                    className="h-8 w-8 p-0 text-red-400 hover:text-red-300"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                   >
                     <Trash2 className="size-4" />
                   </Button>
                 </div>
-                <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-muted-foreground">
+                <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap font-sans text-xs leading-5 text-muted-foreground">
                   {draft.content}
                 </pre>
               </div>
