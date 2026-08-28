@@ -101,7 +101,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
     if (role === "DOCTOR")
       return ["/dashboard", "/my-appointments", "/my-patients", "/my-queue", "/reports/analyzer"].includes(item.url);
     if (role === "PATIENT")
-      return ["/dashboard"].includes(item.url);
+      return ["/dashboard", "/my-appointments"].includes(item.url);
     return false;
   });
 

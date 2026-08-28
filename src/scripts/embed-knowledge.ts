@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { pool } from "@/lib/db";
 import { getEmbedding } from "@/lib/ai/embed";
 

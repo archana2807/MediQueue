@@ -19,6 +19,11 @@ export default function HospitalChat() {
     mutationFn: async (
       userMessage: string
     ) => {
+      const history = messages.slice(1).map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+
       const response =
         await fetch("/api/chat", {
           method: "POST",
@@ -28,6 +33,7 @@ export default function HospitalChat() {
           },
           body: JSON.stringify({
             message: userMessage,
+            history,
           }),
         });
 
@@ -72,7 +78,7 @@ export default function HospitalChat() {
           "Hello 👋 I'm MediQueue AI Assistant. How can I help you today?",
       },
     ]);
-
+ 
   async function sendMessage() {
   if (!message.trim()) return;
 

@@ -14,6 +14,10 @@ CREATE TABLE IF NOT EXISTS patient_drafts (
 );
 
 -- Delete in correct order (foreign keys)
+DELETE FROM patient_medications;
+DELETE FROM patient_allergies;
+DELETE FROM patient_conditions;
+DELETE FROM patient_observations;
 DELETE FROM appointment_notes;
 DELETE FROM patient_drafts;
 DELETE FROM patient_reports;
@@ -154,3 +158,18 @@ INSERT INTO appointment_notes (id, appointment_id, doctor_notes, ai_summary) VAL
 
 ## Diet
 - Soft, warm foods, clear soups');
+
+-- ============================================
+-- KNOWLEDGE CHUNKS (FAQ / RAG)
+-- ============================================
+INSERT INTO knowledge_chunks (id, title, content) VALUES
+('e0000000-0000-0000-0000-000000000001', 'Hospital Timings', 'MediQueue Hospital is open Monday to Saturday from 9:00 AM to 6:00 PM. Sunday is closed. Emergency services are available 24/7. Lunch break is from 1:00 PM to 2:00 PM during which only emergency cases are handled.'),
+('e0000000-0000-0000-0000-000000000002', 'Appointment Booking', 'You can book an appointment by clicking on the "New Appointment" button in the sidebar or by telling the AI assistant which doctor you want to visit and your preferred date and time. Appointments are available from 9:00 AM to 6:00 PM with a lunch break at 1:00 PM to 2:00 PM.'),
+('e0000000-0000-0000-0000-000000000003', 'Emergency Contact', 'For emergencies, call 108 (Ambulance) or 102 (Medical Emergency). You can also visit our 24/7 Emergency Department directly. For non-emergency queries, call our reception at 9000000000.'),
+('e0000000-0000-0000-0000-000000000004', 'Available Departments', 'MediQueue Hospital has the following departments: Cardiology, Orthopedics, Pediatrics, Dermatology, and General Medicine. Each department has experienced doctors available during hospital hours.'),
+('e0000000-0000-0000-0000-000000000005', 'Diet Advice', 'For a healthy diet: eat plenty of fruits and vegetables, whole grains, lean proteins, and stay hydrated with 8-10 glasses of water daily. Avoid processed foods, excess sugar, and saturated fats. For specific conditions like diabetes or heart disease, consult your doctor for a personalized diet plan.'),
+('e0000000-0000-0000-0000-000000000006', 'Insurance and Payment', 'We accept most major health insurance plans. Cash, credit/debit cards, and UPI payments are accepted. Please carry your insurance card and valid ID during your visit. For billing queries, contact the reception desk.'),
+('e0000000-0000-0000-0000-000000000007', 'Patient Rights', 'Every patient has the right to: receive care without discrimination, privacy and confidentiality of medical records, informed consent before treatment, access to their medical records, and file complaints without retaliation.'),
+('e0000000-0000-0000-0000-000000000008', 'What to Bring', 'Please bring: valid photo ID, insurance card, list of current medications, previous medical records if available, and a list of questions for your doctor. Arrive 15 minutes before your appointment time for registration.'),
+('e0000000-0000-0000-0000-000000000009', 'Follow-up Policy', 'Follow-up appointments can be scheduled at the end of your visit or through the patient portal. For post-surgery follow-ups, please follow the schedule provided by your doctor. Most follow-ups are within 1-2 weeks of the initial visit.'),
+('e0000000-0000-0000-0000-000000000010', 'Queue System', 'The hospital uses a digital queue management system. When you check in for your appointment, you will be assigned a queue number. You can track your queue position in real-time on the dashboard. Patients are served in order of their queue numbers.');

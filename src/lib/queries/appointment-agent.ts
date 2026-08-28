@@ -48,12 +48,17 @@ function normalizeDate(
 }
 
 export async function extractAppointmentDetails(
-  message: string
+  message: string,
+  history?: Array<{ role: string; content: string }>
 ) {
   const today =
     new Date()
       .toISOString()
       .split("T")[0];
+
+  const historyContext = history && history.length > 0
+    ? `\n\nConversation history (use this to fill in missing details):\n${history.map(m => `${m.role}: ${m.content}`).join("\n")}`
+    : "";
 
   const response =
     await openai.chat.completions.create({
@@ -86,13 +91,18 @@ Rules:
 - Return only JSON.
 - No markdown.
 - No explanations.
-- doctorName is required.
+- doctorName is required. Extract the FULL doctor name as mentioned (e.g., "Dr Meena Iyer", "Dr. Priya", "Dr Patel").
 - appointmentDate must be YYYY-MM-DD.
 - appointmentTime must be HH:mm (24-hour format).
 - If user says "2 PM" return "14:00".
 - If user says "10:30 AM" return "10:30".
 - If no time is mentioned return "".
 - If user says "today" or "tomorrow", convert them into actual dates.
+- If user says "book with Dr X at 11:00", extract doctorName as "Dr X" and appointmentTime as "11:00".
+- If user provides only a time like "11:00", set doctorName to "" and appointmentTime to the time.
+- If user provides only a doctor name, set appointmentTime to "" and appointmentDate to today.
+- Use conversation history to fill in missing details. If the user previously mentioned a doctor name and now provides a time, use the previously mentioned doctor name.
+${historyContext}
 `,
         },
         {
@@ -156,12 +166,14 @@ Rules:
 
 export async function handleAppointment(
   message: string,
-  patientId: string
+  patientId: string,
+  history?: Array<{ role: string; content: string }>
 ) {
   try {
     const details =
       await extractAppointmentDetails(
-        message
+        message,
+        history
       );
     console.log("DETAILS:", details);
 details.appointmentDate =

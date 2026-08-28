@@ -64,10 +64,19 @@ export default withAuth(
       );
     }
 
+    // DOCTOR + PATIENT routes (my-appointments)
+    if (
+      pathname.startsWith("/my-appointments") &&
+      !["DOCTOR", "PATIENT"].includes(String(role))
+    ) {
+      return NextResponse.redirect(
+        new URL("/dashboard", req.url)
+      );
+    }
+
     // DOCTOR only routes
     if (
-      (pathname.startsWith("/my-appointments") ||
-        pathname.startsWith("/my-queue") ||
+      (pathname.startsWith("/my-queue") ||
         pathname.startsWith("/my-patients")) &&
       role !== "DOCTOR"
     ) {

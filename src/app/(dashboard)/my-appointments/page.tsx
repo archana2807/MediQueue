@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Card,
   CardContent,
@@ -5,17 +7,26 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import DoctorAppointmentsTable from "@/components/patients/doctor-appointments-table";
+import PatientAppointmentsTable from "@/components/patients/patient-appointments-table";
+import { useSession } from "next-auth/react";
 
 export const dynamic = "force-dynamic";
 
-export default async function DoctorAppointmentsPage() {
+export default function MyAppointmentsPage() {
+  const { data: session } = useSession();
+  const role = session?.user?.role;
+
   return (
     <Card className="animate-fade-in">
       <CardHeader>
         <CardTitle>My Appointments</CardTitle>
       </CardHeader>
       <CardContent>
-        <DoctorAppointmentsTable />
+        {role === "DOCTOR" ? (
+          <DoctorAppointmentsTable />
+        ) : (
+          <PatientAppointmentsTable />
+        )}
       </CardContent>
     </Card>
   );

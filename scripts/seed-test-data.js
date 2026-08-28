@@ -40,7 +40,7 @@ async function seed() {
       ('a0000000-0000-0000-0000-000000000012', 'Dr. Anita Desai', 'anita.desai@mediqueue.com', '9100000003', '${PWD}', 'DOCTOR', NOW()),
       ('a0000000-0000-0000-0000-000000000013', 'Dr. Vikram Patel', 'vikram.patel@mediqueue.com', '9100000004', '${PWD}', 'DOCTOR', NOW()),
       ('a0000000-0000-0000-0000-000000000014', 'Dr. Meena Iyer', 'meena.iyer@mediqueue.com', '9100000005', '${PWD}', 'DOCTOR', NOW()),
-      ('a0000000-0000-0000-0000-000000000020', 'Patient User', 'patient@gmail.com', '9200000001', '', 'PATIENT', NOW()),
+      ('a0000000-0000-0000-0000-000000000020', 'Patient User', 'patient@gmail.com', '9200000001', '${PWD}', 'PATIENT', NOW()),
       ('a0000000-0000-0000-0000-000000000021', 'Sneha Reddy', 'sneha.reddy@email.com', '9200000002', '', 'PATIENT', NOW()),
       ('a0000000-0000-0000-0000-000000000022', 'Karan Singh', 'karan.singh@email.com', '9200000003', '', 'PATIENT', NOW()),
       ('a0000000-0000-0000-0000-000000000023', 'Divya Nair', 'divya.nair@email.com', '9200000004', '', 'PATIENT', NOW()),

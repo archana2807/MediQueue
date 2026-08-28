@@ -368,3 +368,54 @@ export async function getAppointmentsByDoctorCount(
 
   return result.rows[0].count;
 }
+
+export async function getAppointmentsByPatientId(
+  patientId: string,
+  search = "",
+  limit = 10,
+  offset = 0
+) {
+  const result = await pool.query(
+    `
+    SELECT
+      a.*,
+      du.name AS doctor_name,
+      d.specialization AS doctor_specialization
+    FROM appointments a
+    LEFT JOIN doctors d ON d.id = a.doctor_id
+    LEFT JOIN users du ON du.id = d.user_id
+    WHERE a.patient_id = $1
+      AND (
+        du.name ILIKE $2
+        OR d.specialization ILIKE $2
+      )
+    ORDER BY a.appointment_date DESC
+    LIMIT $3 OFFSET $4
+    `,
+    [patientId, `%${search}%`, limit, offset]
+  );
+
+  return result.rows;
+}
+
+export async function getAppointmentsByPatientCount(
+  patientId: string,
+  search = ""
+) {
+  const result = await pool.query(
+    `
+    SELECT COUNT(*)::int AS count
+    FROM appointments a
+    LEFT JOIN doctors d ON d.id = a.doctor_id
+    LEFT JOIN users du ON du.id = d.user_id
+    WHERE a.patient_id = $1
+      AND (
+        du.name ILIKE $2
+        OR d.specialization ILIKE $2
+      )
+    `,
+    [patientId, `%${search}%`]
+  );
+
+  return result.rows[0].count;
+}

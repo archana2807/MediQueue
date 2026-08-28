@@ -181,6 +181,11 @@ export async function createDoctor(
 export async function findDoctor(
   doctorName: string
 ) {
+  const normalized = doctorName
+    .toLowerCase()
+    .replace(/^dr\.?\s*/i, "")
+    .trim();
+
   const result =
     await pool.query(
       `
@@ -191,11 +196,12 @@ export async function findDoctor(
       FROM doctors d
       JOIN users u
         ON u.id = d.user_id
-      WHERE LOWER(u.name)
-      LIKE LOWER($1)
+      WHERE
+        LOWER(REPLACE(u.name, '.', '')) LIKE '%' || $1 || '%'
+        OR LOWER(u.name) LIKE '%' || $2 || '%'
       LIMIT 1
       `,
-      [`%${doctorName}%`]
+      [normalized, doctorName.toLowerCase()]
     );
 
   return result.rows[0];

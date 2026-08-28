@@ -20,18 +20,65 @@ async function detectIntent(
   message: string,
   history?: Array<{ role: string; content: string }>
 ) {
-  const historyContext = history && history.length > 0
-    ? `\n\nConversation history:\n${history.map(m => `${m.role}: ${m.content}`).join("\n")}`
-    : "";
-
   const lastAssistantMsg = history && history.length > 0
     ? history.filter(m => m.role === "assistant").pop()?.content || ""
     : "";
 
-  const isRespondingToPrompt = lastAssistantMsg.includes("doctor name") ||
-    lastAssistantMsg.includes("available slots") ||
-    lastAssistantMsg.includes("preferred time") ||
-    lastAssistantMsg.includes("another date");
+  const lowerMsg = message.toLowerCase().trim();
+  const lowerLastBot = lastAssistantMsg.toLowerCase();
+
+  // DIRECT CHECK: If bot just asked for doctor name and user replies with a name
+  if (lowerLastBot.includes("please provide a doctor name") ||
+      lowerLastBot.includes("provide a doctor name")) {
+    return "APPOINTMENT";
+  }
+
+  // DIRECT CHECK: If bot just showed available slots and user replies with a time
+  if (lowerLastBot.includes("available slots") ||
+      lowerLastBot.includes("preferred time") ||
+      lowerLastBot.includes("reply with")) {
+    if (/^\d{1,2}(:\d{2})?\s*(am|pm)?$/i.test(lowerMsg) ||
+        /^\d{1,2}\s*(am|pm)$/i.test(lowerMsg) ||
+        /^at\s+\d/i.test(lowerMsg)) {
+      return "APPOINTMENT";
+    }
+  }
+
+  // DIRECT CHECK: If user mentions booking keywords
+  if (lowerMsg.includes("book") ||
+      lowerMsg.includes("appointment") ||
+      lowerMsg.includes("schedule") ||
+      lowerMsg.includes("slot")) {
+    return "APPOINTMENT";
+  }
+
+  // DIRECT CHECK: If user describes a symptom
+  if (lowerMsg.includes("i have") ||
+      lowerMsg.includes("my ") && lowerMsg.includes("hurt") ||
+      lowerMsg.includes("i feel") ||
+      lowerMsg.includes("i am ") ||
+      lowerMsg.includes("my child")) {
+    return "SYMPTOM";
+  }
+
+  // DIRECT CHECK: If user asks about a doctor
+  if (lowerMsg.includes("who is") ||
+      lowerMsg.includes("who are") ||
+      lowerMsg.includes("do you have") ||
+      lowerMsg.includes("show me") ||
+      lowerMsg.includes("list all") ||
+      lowerMsg.includes("which doctor")) {
+    return "DOCTOR";
+  }
+
+  // DIRECT CHECK: Queue and History stubs
+  if (lowerMsg.includes("queue")) return "QUEUE";
+  if (lowerMsg.includes("history")) return "HISTORY";
+
+  // Default: use LLM for ambiguous cases
+  const historyContext = history && history.length > 0
+    ? `\n\nConversation history:\n${history.map(m => `${m.role}: ${m.content}`).join("\n")}`
+    : "";
 
   const response = await openai.chat.completions.create({
     model: MODEL,
@@ -40,42 +87,22 @@ async function detectIntent(
     messages: [
       {
         role: "user",
-        content: `
-Classify the user query into ONE of these intents:
+        content: `Classify into ONE: FAQ, DOCTOR, SYMPTOM, APPOINTMENT, QUEUE, HISTORY
 
-FAQ - General questions about hospital, timings, policies
-DOCTOR - Asking about doctors, searching for doctors
-SYMPTOM - Describing symptoms to get doctor recommendation
-APPOINTMENT - Booking, scheduling, or modifying an appointment. Also classify as APPOINTMENT if the user is responding to a question about doctor name, date, or time in an appointment flow.
-QUEUE - Asking about queue status
-HISTORY - Asking about patient history
+Rules:
+- Book/appointment/schedule/slot = APPOINTMENT
+- Doctor name or time after bot asked for it = APPOINTMENT
+- Describing symptoms = SYMPTOM
+- Asking about doctors = DOCTOR
+- General questions = FAQ
 
-CRITICAL RULES (check these first):
-1. If the conversation history shows the bot just asked for a "doctor name", "preferred time", or "available slots", classify as APPOINTMENT.
-2. If the user provides only a doctor name (like "Dr. Meena Iyer", "Priya", "Sharma") and the previous bot message asked for a doctor name, classify as APPOINTMENT.
-3. If the user provides only a time (like "11:00", "2 PM") and the previous bot message showed available slots, classify as APPOINTMENT.
-4. If the user mentions "book", "appointment", "schedule", "slot", or a time like "11:00", classify as APPOINTMENT.
-5. If the user provides a doctor name after an appointment flow, classify as APPOINTMENT.
-
-Other rules:
-- If the user is describing symptoms, classify as SYMPTOM.
-- If the user is asking about a doctor (who is, do you have, show me), classify as DOCTOR.
 ${historyContext}
-
-Query:
-${message}
-`,
+Query: ${message}`,
       },
     ],
   });
 
-  const intent = (response.choices?.[0]?.message?.content || "FAQ").trim();
-
-  if (isRespondingToPrompt && (intent === "DOCTOR" || intent === "FAQ")) {
-    return "APPOINTMENT";
-  }
-
-  return intent;
+  return (response.choices?.[0]?.message?.content || "FAQ").trim();
 }
 
 async function handleFAQ(
