@@ -48,13 +48,29 @@ A full-stack hospital queue management system with AI-powered chatbot for appoin
 
 ---
 
-## Login Credentials
+## Quick Demo Access
 
-| Role | Email | Password |
-|------|-------|----------|
-| Patient | patient@gmail.com | Admain |
-| Admin | admin@gmail.com | Admain |
-| Doctor | doctor@gmail.com | Admain |
+**Password for all accounts:** `Admain`
+
+| Role | Email | What You Can Do |
+|------|-------|-----------------|
+| Admin | admin@gmail.com | Dashboard, Queue Management, Doctors, Reports |
+| Doctor | doctor@gmail.com | My Queue, Complete Appointments, AI Notes |
+| Patient | patient@gmail.com | Book Appointments, My Appointments, Chatbot |
+
+### How to Access
+
+1. Go to https://medi-queue-beige.vercel.app/login
+2. Click on any role button to auto-fill the email
+3. Enter password: `Admain`
+4. Click Login
+
+### Try the Chatbot
+
+1. Login as **Patient**
+2. Click the **blue chat bubble** in the bottom-right corner
+3. Ask: *"How can I book an appointment?"*
+4. Follow the guided flow: Doctor → Date → Time → Booked!
 
 ---
 
