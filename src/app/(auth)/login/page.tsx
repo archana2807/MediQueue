@@ -6,12 +6,9 @@ import {
   FileText,
   MessageSquare,
   KeyRound,
-  PlayCircle,
   Zap,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   return (
@@ -37,12 +34,6 @@ export default function LoginPage() {
                 </span>
                 <p className="text-xs text-muted-foreground font-medium">Hospital Management</p>
               </div>
-              <Link href="https://youtu.be/Wffep02dT3Y" target="_blank" className="ml-auto">
-                <Button size="sm" variant="outline" className="gap-2 shadow-sm">
-                  <PlayCircle className="h-4 w-4" />
-                  Demo
-                </Button>
-              </Link>
             </div>
             <p className="text-lg text-muted-foreground leading-relaxed">
               AI-Powered Hospital Management System for Patients, Doctors, and Administrators.
