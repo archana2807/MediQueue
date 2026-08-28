@@ -4,7 +4,7 @@
 
 ---
 
-## Quick Login
+## Login
 
 | Who | Email | Password |
 |-----|-------|----------|
@@ -17,213 +17,194 @@
 ## How to Open the Chatbot
 
 1. Login as **Patient**
-2. Click the **blue chat bubble** (bottom-right corner)
-3. You see: "Hello I'm MediQueue AI Assistant. How can I help you today?"
-4. Type a question and press **Enter** or click **Send**
+2. Click the **blue chat bubble** in the bottom-right corner
+3. You'll see a greeting message from the AI assistant
+4. Start typing your questions!
 
 ---
 
-## PART A: Chatbot Testing (Copy-Paste These)
+## PART A: Chatbot Questions to Try
 
-### A1. Ask These Questions — Bot Should Answer Correctly
+### A1. General Hospital Questions
 
-Type each question one by one and check the answer:
+Ask these to see if the bot knows about the hospital:
 
-| # | Type This | Should Answer About |
-|---|-----------|---------------------|
+| # | You Ask | What You Should See |
+|---|---------|---------------------|
 | 1 | What are hospital timings? | Mon-Sat 9AM-6PM, lunch 1-2PM, emergency 24/7 |
 | 2 | Is the hospital open on Sunday? | No, closed on Sunday |
-| 3 | What departments are available? | Cardiology, Orthopedics, Pediatrics, Dermatology, General Medicine |
-| 4 | Emergency contact number? | 108 and 102 |
-| 5 | What diet is healthy? | Fruits, vegetables, whole grains, water |
-| 6 | What insurance do you accept? | Major insurance, cash, cards, UPI |
-| 7 | What should I bring? | Photo ID, insurance card, medication list, arrive 15 min early |
+| 3 | What departments do you have? | Cardiology, Orthopedics, Pediatrics, Dermatology, General Medicine |
+| 4 | What's the emergency number? | 108 and 102 |
+| 5 | What should I eat to stay healthy? | Fruits, vegetables, whole grains, water |
+| 6 | Do you accept insurance? | Yes, major insurance, cash, cards, UPI |
+| 7 | What do I need to bring? | Photo ID, insurance card, medication list, arrive 15 min early |
 | 8 | How does the queue work? | Digital queue, real-time tracking |
-| 9 | What time does the hospital open? | 9:00 AM |
-| 10 | When is lunch break? | 1:00 PM to 2:00 PM |
+| 9 | What time do you open? | 9:00 AM |
+| 10 | When is lunch time? | 1:00 PM to 2:00 PM |
 
-**PASS:** Answer contains the expected keywords
-**FAIL:** Bot says "I don't have that information"
-
----
-
-### A2. Click These Buttons — Bot Should Send the Right Message
-
-| # | Click This Button | Bot Sends |
-|---|-------------------|-----------|
-| 11 | Hospital Timings | "What are hospital timings?" |
-| 12 | Appointments | "How can I book an appointment?" |
-| 13 | Diet Advice | "What diet is healthy?" |
-| 14 | Emergency | "Emergency contact number?" |
-
-**PASS:** Button fills the input box with the correct message
-**FAIL:** Button does nothing or sends wrong message
+If the bot answers correctly, move on. If it says "I don't have that information," that's a problem.
 
 ---
 
-### A3. Type These Symptoms — Bot Should Recommend the Right Doctor
+### A2. Quick Buttons
 
-| # | Type This | Should Recommend |
-|---|-----------|------------------|
-| 15 | I have fever | Dr. Meena Iyer (General Medicine) |
-| 16 | I have chest pain | Dr. Priya Sharma (Cardiology) |
-| 17 | My knee hurts | Dr. Rahul Verma (Orthopedics) |
-| 18 | I have a skin rash | Dr. Vikram Patel (Dermatology) |
-| 19 | My child has a cough | Dr. Anita Desai (Pediatrics) |
-| 20 | I have a headache | Dr. Meena Iyer (General Medicine) |
-| 21 | I have tooth pain | "No doctors currently available" (Dental not in DB) |
-| 22 | I have eye pain | "No doctors currently available" (Ophthalmology not in DB) |
+Try clicking the 4 buttons at the bottom of the chat:
 
-**PASS:** Shows correct department name + doctor name
-**FAIL:** Wrong doctor or no recommendation
+| # | Click | What Happens |
+|---|-------|--------------|
+| 11 | Hospital Timings | Sends "What are hospital timings?" |
+| 12 | Appointments | Sends "How can I book an appointment?" |
+| 13 | Diet Advice | Sends "What diet is healthy?" |
+| 14 | Emergency | Sends "Emergency contact number?" |
+
+Each button should fill the text box with a question. You still need to click Send.
 
 ---
 
-### A4. Type These — Bot Should List Doctors
+### A3. Describe Your Symptoms
 
-| # | Type This | Should Show |
-|---|-----------|-------------|
+Tell the bot what's wrong and see if it recommends the right doctor:
+
+| # | You Say | Doctor You Should Get |
+|---|---------|----------------------|
+| 15 | I have fever | Dr. Meena Iyer |
+| 16 | I have chest pain | Dr. Priya Sharma |
+| 17 | My knee hurts | Dr. Rahul Verma |
+| 18 | I have a skin rash | Dr. Vikram Patel |
+| 19 | My child has a cough | Dr. Anita Desai |
+| 20 | I have a headache | Dr. Meena Iyer |
+| 21 | I have tooth pain | No dental doctor available |
+| 22 | I have eye pain | No eye doctor available |
+
+---
+
+### A4. Ask About Doctors
+
+| # | You Ask | You Should See |
+|---|---------|----------------|
 | 23 | Who are the doctors? | All 5 doctors listed |
-| 24 | Show me cardiologists | Dr. Priya Sharma |
-| 25 | Do you have a dermatologist? | Dr. Vikram Patel |
-| 26 | Which doctor treats children? | Dr. Anita Desai |
-
-**PASS:** Correct doctor(s) shown
-**FAIL:** Missing doctors or wrong specialty
+| 24 | Show me the heart doctor | Dr. Priya Sharma |
+| 25 | Do you have a skin doctor? | Dr. Vikram Patel |
+| 26 | Who treats children? | Dr. Anita Desai |
 
 ---
 
-### A5. Book an Appointment — Step by Step
+### A5. Book an Appointment
 
 **First, login as Patient (patient@gmail.com / Admain)**
 
-| # | Step 1 — Type This | Step 2 — Then Type | What Happens |
-|---|--------------------|--------------------|--------------|
-| 27 | How can I book an appointment? | Dr. Meena Iyer | Bot asks for doctor name, then shows slots |
-| 28 | Book appointment with Dr. Meena Iyer | 11:00 | Appointment booked with confirmation |
-| 29 | Book appointment with Dr. Priya Sharma tomorrow | 14:00 | Books for tomorrow |
-| 30 | I want to see Dr. Rahul at 2 PM | (nothing, auto-books) | Books directly at 14:00 |
-| 31 | Book appointment with Dr Meena at 11:00 | (nothing, auto-books) | Finds Dr. Meena Iyer (no dot) |
-| 32 | Book with Priya at 10:00 | (nothing, auto-books) | Finds Dr. Priya Sharma |
-| 33 | Book appointment with Dr. Vikram Patel | (shows slots) | Pick a time, then type it |
-
-**How the booking flow works:**
+#### Try This Conversation:
 
 ```
-You:  How can I book an appointment?
-Bot:  Please provide a doctor name.
+You:    How can I book an appointment?
+Bot:    Please provide a doctor name.
 
-You:  Dr. Meena Iyer
-Bot:  Dr. Meena Iyer is available on [date].
-      Available slots:
-      ✓ 09:00
-      ✓ 10:00
-      ✓ 11:00
-      ✓ 12:00
-      ✓ 14:00
-      ✓ 15:00
-      ✓ 16:00
-      ✓ 17:00
-      Reply with your preferred time.
+You:    Dr. Meena Iyer
+Bot:    Dr. Meena Iyer is available on [today's date].
+        Available slots:
+        ✓ 09:00
+        ✓ 10:00
+        ✓ 11:00
+        ✓ 12:00
+        ✓ 14:00
+        ✓ 15:00
+        ✓ 16:00
+        ✓ 17:00
+        Reply with your preferred time.
 
-You:  11:00
-Bot:  ✅ Appointment Booked
-      Doctor: Dr. Meena Iyer
-      Date: 2026-08-28
-      Time: 11:00
-      Estimated Wait: 0 min
-      Appointment ID: [id]
-      Status: Pending
+You:    11:00
+Bot:    ✅ Appointment Booked
+        Doctor: Dr. Meena Iyer
+        Date: 2026-08-28
+        Time: 11:00
+        Estimated Wait: 0 min
+        Appointment ID: [id]
+        Status: Pending
 ```
 
-**PASS:** Appointment Booked confirmation with Doctor, Date, Time, ID
-**FAIL:** Error message or no booking
+#### More Booking Examples:
+
+| # | You Say | What Happens |
+|---|---------|--------------|
+| 27 | Book appointment with Dr. Meena Iyer | Shows available slots |
+| 28 | Book appointment with Dr. Priya Sharma tomorrow | Shows slots for tomorrow |
+| 29 | I want to see Dr. Rahul at 2 PM | Books directly |
+| 30 | Book appointment with Dr Meena at 11:00 | Works without the dot |
+| 31 | Book with Priya at 10:00 | Finds Dr. Priya Sharma |
+| 32 | Book appointment with Dr. Vikram Patel | Shows slots, then you pick a time |
 
 ---
 
-### A6. Try These — Bot Should Block or Show Error
+### A6. Try Bad Times — Bot Should Say No
 
-| # | Type This | Should Get |
-|---|-----------|------------|
+| # | You Say | You Should Get |
+|---|---------|----------------|
 | 33 | Book appointment at 13:00 | "Lunch break: 01:00 PM - 02:00 PM" |
 | 34 | Book appointment at 8:00 | "Available only between 09:00 AM - 06:00 PM" |
 | 35 | Book appointment at 18:00 | "Available only between 09:00 AM - 06:00 PM" |
 | 36 | Book appointment with Dr. Cancer | "Doctor not found" |
 | 37 | Book appointment yesterday | "Please provide a future date" |
 
-**PASS:** Correct error message shown
-**FAIL:** Booking goes through or wrong error
-
 ---
 
-### A7. Try These Weird Inputs — Bot Should Handle Gracefully
+### A7. Try Weird Stuff — Bot Should Not Crash
 
-| # | Type This | Should Get |
-|---|-----------|------------|
+| # | You Say | You Should Get |
+|---|---------|----------------|
 | 38 | abcdefgh | "I don't have that information" |
-| 39 | !@#$%^&*() | Helpful response or FAQ fallback |
+| 39 | !@#$%^&*() | Some helpful response |
 | 40 | 12345 | "I don't have that information" |
-| 41 | Thank you | Polite response |
+| 41 | Thank you | Nice response |
 | 42 | What's your name? | "MediQueue AI Assistant" |
 
-**PASS:** Bot responds politely, no crash
-**FAIL:** Bot crashes or shows technical error
-
 ---
 
-### A8. Multi-Turn Conversation — Bot Should Remember Context
+### A8. Have a Conversation — Bot Should Remember
 
-| Turn | Type This | Bot Should... |
-|------|-----------|---------------|
+| Turn | You Say | Bot Should... |
+|------|---------|---------------|
 | 1 | I have fever | Recommend Dr. Meena Iyer |
 | 2 | Book appointment with her | Show slots for Dr. Meena |
-| 3 | 11:00 | Book appointment |
-| 4 | What time is the hospital open? | Answer FAQ (switch context) |
+| 3 | 11:00 | Book the appointment |
+| 4 | What time do you open? | Answer about hospital hours |
 
-**PASS:** Bot remembers "her" = Dr. Meena from turn 1
-**FAIL:** Bot forgets context
+The bot should remember that "her" means Dr. Meena from the first message.
 
 ---
 
-### A9. Test Without Login
+### A9. Try Without Login
 
 1. **Logout** from the patient account
 2. Open the chatbot
-3. Type: `Book appointment with Dr. Meena at 11:00`
-4. Should get: **"Please login to book an appointment."**
-
-**PASS:** Login required message shown
-**FAIL:** Booking goes through without login
+3. Type: **Book appointment with Dr. Meena at 11:00**
+4. You should see: **"Please login to book an appointment."**
 
 ---
 
-### A10. Test as Doctor (Cannot Book)
+### A10. Try as Doctor
 
 1. Login as **Doctor** (doctor@gmail.com / Admain)
-2. Open chatbot
-3. Type: `Book appointment with Dr. Meena at 11:00`
-4. Should get: **"Only patients can book appointments."**
-
-**PASS:** Role restriction message shown
-**FAIL:** Booking goes through as doctor
+2. Open the chatbot
+3. Type: **Book appointment with Dr. Meena at 11:00**
+4. You should see: **"Only patients can book appointments."**
 
 ---
 
-## PART B: App Feature Testing
+## PART B: Other Features to Test
 
-### B1. Dashboard (All Roles)
+### B1. Dashboard
 
-1. Login and check the Dashboard
-2. Should see: **Stats Cards** (Appointments, Patients, Doctors, Queue)
-3. Should see: **Recent Appointments** list
+1. Login as any user
+2. You should see **stats cards** showing numbers for Appointments, Patients, Doctors, Queue
+3. You should see a list of **recent appointments**
 
 ---
 
 ### B2. My Appointments (Patient)
 
 1. Login as **Patient**
-2. Click **My Appointments** in sidebar
-3. Should see: Queue Number, Doctor, Date, Time, Status
+2. Click **My Appointments** in the left menu
+3. You should see your appointments with doctor name, date, time, and status
 4. Try searching by doctor name
 
 ---
@@ -231,74 +212,75 @@ Bot:  ✅ Appointment Booked
 ### B3. Queue Management (Admin)
 
 1. Login as **Admin**
-2. Click **Queue Management** in sidebar
-3. Should see today's patients
-4. Try the **date picker** and **doctor filter**
-5. Check status colors: CHECKED_IN (Blue), WAITING (Violet), IN_PROGRESS (Cyan), COMPLETED (Green)
+2. Click **Queue Management** in the left menu
+3. You should see today's patients
+4. Try picking a different date or filtering by doctor
+5. Each patient has a color: Blue (Checked In), Violet (Waiting), Cyan (In Progress), Green (Completed)
 
 ---
 
 ### B4. Doctor Workspace (Doctor)
 
 1. Login as **Doctor**
-2. Click **My Queue** in sidebar
+2. Click **My Queue** in the left menu
 3. Click **Complete** on a patient
-4. Type notes in the textarea
-5. Click **Extract from Notes** — should auto-fill clinical data
+4. Type some notes about the visit
+5. Click **Extract from Notes** — it fills in conditions, medications, etc.
 6. Click **Generate AI Summary**
 7. Click **Save & Complete**
 
 ---
 
-### B5. Patient Details (Admin/Doctor)
+### B5. Patient Details
 
-1. Go to Queue Management
-2. Click the **user icon** on any patient row
-3. Should see: Patient info, stats, clinical summary
-4. In **Clinical Agent** panel, select a task and click **Run Agent**
-5. Click **Save as Draft**
+1. Login as **Admin** or **Doctor**
+2. Go to **Queue Management**
+3. Click the **person icon** on any patient row
+4. You should see patient info, medical history, and clinical notes
+5. In the **Clinical Agent** section, pick a task and click **Run Agent**
+6. Click **Save as Draft**
 
 ---
 
-### B6. Reports (Admin)
+### B6. Report Analyzer (Admin)
 
 1. Login as **Admin**
-2. Click **Report Analyzer** in sidebar
-3. Upload a PDF or image of a medical report
-4. Should see: Key Findings, Abnormal Results, Recommendations
+2. Click **Report Analyzer** in the left menu
+3. Upload a medical report (PDF or image)
+4. You should see: Key Findings, Abnormal Results, Recommendations
 
 ---
 
 ### B7. Doctor Management (Admin)
 
 1. Login as **Admin**
-2. Click **Doctors** in sidebar
-3. Should see list of 5 doctors
-4. Try adding, editing, or deleting a doctor
+2. Click **Doctors** in the left menu
+3. You should see a list of 5 doctors
+4. Try adding, editing, or removing a doctor
 
 ---
 
-## Doctor Reference
+## Doctor List
 
-| Doctor | Specialty | Email |
-|--------|-----------|-------|
-| Dr. Priya Sharma | Cardiology | doctor@gmail.com |
-| Dr. Rahul Verma | Orthopedics | rahul.verma@mediqueue.com |
-| Dr. Anita Desai | Pediatrics | anita.desai@mediqueue.com |
-| Dr. Vikram Patel | Dermatology | vikram.patel@mediqueue.com |
-| Dr. Meena Iyer | General Medicine | meena.iyer@mediqueue.com |
+| Doctor | Specialty |
+|--------|-----------|
+| Dr. Priya Sharma | Heart (Cardiology) |
+| Dr. Rahul Verma | Bones & Joints (Orthopedics) |
+| Dr. Anita Desai | Children (Pediatrics) |
+| Dr. Vikram Patel | Skin (Dermatology) |
+| Dr. Meena Iyer | General Medicine |
 
 ---
 
-## How to Book an Appointment (All Phrases That Work)
+## All Ways to Book an Appointment
 
-**Start with a general question — bot will guide you:**
+**Start simple — the bot will guide you:**
 ```
 How can I book an appointment?
 ```
-Bot responds: **"Please provide a doctor name."** → Then you give the doctor name → Then you pick a time.
+The bot will ask for a doctor name, then show available times.
 
-**Or give all details at once:**
+**Or say everything at once:**
 ```
 Book appointment with Dr. Meena Iyer at 11:00
 Book with Priya at 10:00
@@ -307,24 +289,21 @@ Schedule with Dr. Vikram at 9:00
 Book appointment with Dr Meena tomorrow at 14:00
 ```
 
-**Time formats that work:** 11:00, 2 PM, 09:00, 3:30 PM
-**Doctor names that work:** Full name, first name, last name, with or without "Dr."
-
 ---
 
-## Checklist
+## What to Check
 
-- [ ] FAQ questions get correct answers
-- [ ] Symptom questions recommend correct doctor
-- [ ] Doctor search lists all 5 doctors
-- [ ] Appointment booking works end-to-end
-- [ ] Booking validation blocks bad times (lunch, after hours)
-- [ ] Multi-turn context is maintained
-- [ ] Error messages are shown for invalid inputs
-- [ ] Login required for booking
-- [ ] Only patients can book
-- [ ] Dashboard shows stats
+- [ ] Bot answers hospital questions correctly
+- [ ] Bot recommends the right doctor for symptoms
+- [ ] Bot lists all doctors when asked
+- [ ] Booking an appointment works from start to finish
+- [ ] Bot blocks bad times (lunch break, after hours)
+- [ ] Bot remembers what you said earlier in the conversation
+- [ ] Bot shows errors for invalid inputs
+- [ ] You need to login before booking
+- [ ] Only patients can book (not doctors or admins)
+- [ ] Dashboard shows the right numbers
 - [ ] Queue management works
-- [ ] Doctor workspace works
+- [ ] Doctor can complete appointments
 - [ ] Clinical agent generates summaries
 - [ ] Report analyzer works
