@@ -128,6 +128,123 @@ Book appointment with Dr Meena tomorrow at 14:00
 
 ---
 
+## Functionality Flow
+
+### Authentication Flow
+
+```
+User visits /login
+       ↓
+Clicks role button (Admin/Doctor/Patient)
+       ↓
+Email auto-filled → Enters password → Clicks Login
+       ↓
+NextAuth.js validates credentials
+       ↓
+JWT token created → Redirected to dashboard based on role
+```
+
+### Chatbot Booking Flow
+
+```
+Patient: "How can I book an appointment?"
+       ↓
+Intent Detection: Pattern matching → APPOINTMENT
+       ↓
+Bot: "Please provide a doctor name."
+       ↓
+Patient: "Dr. Meena Iyer"
+       ↓
+Bot: "When would you like the appointment? (today/tomorrow/date)"
+       ↓
+Patient: "today"
+       ↓
+findDoctor() → Match found
+       ↓
+getDoctorAppointments() → Check existing bookings
+       ↓
+Filter available slots (remove booked + past time + lunch break)
+       ↓
+Bot: "Available slots: 09:00, 10:00, 11:00, 14:00..."
+       ↓
+Patient: "11:00"
+       ↓
+validateTime() → Check working hours + lunch break
+       ↓
+istToUtc() → Convert "11:00" IST → "05:30" UTC
+       ↓
+createAppointment() → INSERT into database
+       ↓
+Bot: "✅ Appointment Booked!"
+```
+
+### Intent Detection Flow
+
+```
+User message arrives at /api/chat
+       ↓
+DETERMINISTIC CHECKS (fast, no LLM):
+├─ Bot asked for "doctor name" + looks like name? → APPOINTMENT
+├─ Bot asked for "date" + "today"/"tomorrow"? → APPOINTMENT
+├─ Bot showed "available slots" + time format? → APPOINTMENT
+├─ Message contains "book"/"appointment"? → APPOINTMENT
+├─ Message contains "i have"/"i feel"? → SYMPTOM
+├─ Message contains "who is"/"show me"? → DOCTOR
+       ↓
+NO MATCH? → Call LLM for classification
+       ↓
+Route to handler → Return response
+```
+
+### Doctor Workspace Flow
+
+```
+Doctor clicks "Complete" on patient
+       ↓
+DoctorNotesModal opens
+       ↓
+Doctor types notes → Clicks "Extract from Notes"
+       ↓
+LLM parses notes → Returns structured data:
+├─ Conditions: ["Hypertension"]
+├─ Medications: ["Amlodipine 5mg"]
+├─ Allergies: ["Penicillin"]
+       ↓
+Doctor reviews → Clicks "Generate AI Summary"
+       ↓
+Clicks "Save & Complete"
+       ↓
+Clinical data saved to database tables
+```
+
+### Data Flow Summary
+
+```
+CLIENT: React Components → TanStack Query → API Routes
+   ↓
+API ROUTES: /api/chat, /api/appointments, /api/queue, /api/ai/*
+   ↓
+DATABASE: users → doctors → appointments → clinical tables
+   ↓
+AI: OpenRouter API (GPT-4.1-nano) for extraction, summary, chat
+```
+
+### Timezone Handling Flow
+
+```
+User enters: "15:00" IST
+       ↓
+istToUtc("15:00") → "09:30" UTC
+       ↓
+Database stores: "2026-08-28 09:30:00"
+       ↓
+formatDateTime() → toLocaleString("Asia/Kolkata")
+       ↓
+Displays: "28 Aug 2026, 03:00 PM"
+```
+
+---
+
 ## How to Run Locally
 
 ```bash
