@@ -221,6 +221,7 @@ const queryClient =
   const appointmentTime =
   new Date(initialData.appointment_date)
     .toLocaleTimeString("en-GB", {
+      timeZone: "Asia/Kolkata",
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -342,6 +343,7 @@ const filteredDoctors =
   const currentTime = initialData?.appointment_date
   ? new Date(initialData.appointment_date)
       .toLocaleTimeString("en-GB", {
+        timeZone: "Asia/Kolkata",
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,

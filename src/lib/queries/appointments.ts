@@ -104,6 +104,17 @@ export async function getAppointmentById(
   return result.rows[0];
 }
 
+function istToUtc(istDateTime: string): string {
+  const match = istDateTime.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!match) return istDateTime;
+  const [, date, h, m, s] = match;
+  let utcH = parseInt(h) - 5;
+  let utcM = parseInt(m) - 30;
+  if (utcM < 0) { utcH -= 1; utcM += 60; }
+  if (utcH < 0) utcH += 24;
+  return `${date} ${String(utcH).padStart(2, "0")}:${String(utcM).padStart(2, "0")}:${s || "00"}`;
+}
+
 export async function createAppointment(
   patientId: string | null,
   patientName: string | null,
@@ -146,6 +157,8 @@ export async function createAppointment(
     );
     const queueNumber = Number(queueResult.rows[0].next_queue);
 
+    const utcDate = istToUtc(appointmentDate);
+
     const result = await client.query(
       `
       INSERT INTO appointments (
@@ -156,7 +169,7 @@ export async function createAppointment(
       )
       RETURNING *
       `,
-      [patientId, doctorId, appointmentDate, queueNumber]
+      [patientId, doctorId, utcDate, queueNumber]
     );
 
     await client.query("COMMIT");
@@ -251,6 +264,8 @@ export async function updateAppointment(
         ) + 1;
     }
 
+    const utcDate = istToUtc(appointmentDate);
+
     const result =
       await client.query(
         `
@@ -267,7 +282,7 @@ export async function updateAppointment(
         [
           patientId,
           doctorId,
-          appointmentDate,
+          utcDate,
           status,
           queueNumber,
           id,

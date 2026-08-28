@@ -12,17 +12,28 @@ export function cn(
 export function formatDateTime(
   dateStr: string
 ) {
-  // Parse timestamp manually as IST to avoid JS Date interpreting as UTC
-  // Matches both "2026-08-28 15:00:00" and "2026-08-28T15:00:00.000Z"
-  const match = dateStr.match(/(\d{4})-(\d{2})-(\d{2})[T\s]+(\d{2}):(\d{2})(?::(\d{2}))?/);
-  if (!match) {
-    return dateStr;
-  }
-  const [, y, mo, d, h, mi] = match;
-  const hour = parseInt(h);
-  const period = hour >= 12 ? "PM" : "AM";
-  const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${d} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(mo)-1]} ${y}, ${String(h12).padStart(2,"0")}:${mi} ${period}`;
+  const d = new Date(dateStr);
+  return d.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+export function formatTimeIST(
+  dateStr: string
+) {
+  const d = new Date(dateStr);
+  return d.toLocaleTimeString("en-GB", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 export function getStatusClass(
