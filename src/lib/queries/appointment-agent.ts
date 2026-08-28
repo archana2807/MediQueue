@@ -96,7 +96,7 @@ Rules:
 - appointmentTime must be HH:mm (24-hour format).
 - If user says "2 PM" return "14:00".
 - If user says "10:30 AM" return "10:30".
-- If no time is mentioned return "".
+- If NO time is mentioned in the message, return "" for appointmentTime. DO NOT guess or invent a time.
 - If user says "today" or "tomorrow", convert them into actual dates.
 - If user says "book with Dr X at 11:00", extract doctorName as "Dr X" and appointmentTime as "11:00".
 - If user provides only a time like "11:00", set doctorName to "" and appointmentTime to the time.
@@ -182,8 +182,15 @@ details.appointmentDate =
     details.appointmentDate
       );
     
+   // FIX: Only keep time if user actually mentioned a time pattern
+   const userMentionedTime = /\d{1,2}(:\d{2})?\s*(am|pm)?/i.test(message) ||
+     /at\s+\d/i.test(message) ||
+     /\d{1,2}\s*(am|pm)/i.test(message);
+   
    const appointmentTime =
-  details.appointmentTime;
+     userMentionedTime && details.appointmentTime
+       ? details.appointmentTime
+       : "";
 
 const appointmentDateTime =
   appointmentTime

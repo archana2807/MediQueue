@@ -78,7 +78,7 @@ export default function HospitalChat() {
           "Hello 👋 I'm MediQueue AI Assistant. How can I help you today?",
       },
     ]);
- 
+ console.log("message111",messages)
   async function sendMessage() {
   if (!message.trim()) return;
 
