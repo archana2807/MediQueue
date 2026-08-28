@@ -33,6 +33,13 @@ async function detectIntent(
     return "APPOINTMENT";
   }
 
+  // DIRECT CHECK: If bot just asked for a date and user replies with a date
+  if (lowerLastBot.includes("when would you like") ||
+      lowerLastBot.includes("today") && lowerLastBot.includes("tomorrow") ||
+      lowerLastBot.includes("or type a date")) {
+    return "APPOINTMENT";
+  }
+
   // DIRECT CHECK: If bot just showed available slots and user replies with a time
   if (lowerLastBot.includes("available slots") ||
       lowerLastBot.includes("preferred time") ||

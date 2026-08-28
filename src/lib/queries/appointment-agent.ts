@@ -184,15 +184,18 @@ details.appointmentDate =
     details.appointmentDate
       );
     
-   // FIX: Only keep time if user actually mentioned a time pattern
-   const userMentionedTime = /\d{1,2}(:\d{2})?\s*(am|pm)?/i.test(message) ||
-     /at\s+\d/i.test(message) ||
-     /\d{1,2}\s*(am|pm)/i.test(message);
-   
-   const appointmentTime =
-     userMentionedTime && details.appointmentTime
-       ? details.appointmentTime
-       : "";
+    // Only keep time if user actually mentioned a time pattern
+    const userMentionedTime = /\d{1,2}(:\d{2})?\s*(am|pm)?/i.test(message) ||
+      /at\s+\d/i.test(message) ||
+      /\d{1,2}\s*(am|pm)/i.test(message);
+    
+    // Detect if user actually mentioned a date (not just defaulted)
+    const userMentionedDate = /today|tomorrow|\d{4}-\d{2}-\d{2}|\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}/i.test(message);
+    
+    const appointmentTime =
+      userMentionedTime && details.appointmentTime
+        ? details.appointmentTime
+        : "";
 
 const appointmentDateTime =
   appointmentTime
@@ -206,6 +209,17 @@ const appointmentDateTime =
 
     if (!details.doctorName) {
       return "Please provide a doctor name.";
+    }
+
+    // After doctor name is provided without a date, ask for date
+    if (details.doctorName && !userMentionedDate && !appointmentTime) {
+      return `Great! You want to book with ${details.doctorName}.
+
+When would you like the appointment?
+
+• Reply with "today" for today
+• Reply with "tomorrow" for tomorrow  
+• Or type a date like "2026-08-30"`;
     }
 
     if (!details.appointmentDate) {
