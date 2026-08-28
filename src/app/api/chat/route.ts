@@ -27,26 +27,48 @@ async function detectIntent(
   const lowerMsg = message.toLowerCase().trim();
   const lowerLastBot = lastAssistantMsg.toLowerCase();
 
-  // DIRECT CHECK: If bot just asked for doctor name and user replies with a name
-  if (lowerLastBot.includes("please provide a doctor name") ||
-      lowerLastBot.includes("provide a doctor name")) {
+  // Check if user message looks like a short name (not a full question/sentence)
+  const looksLikeName = message.split(" ").length <= 5 &&
+    !lowerMsg.includes("?") &&
+    !lowerMsg.includes("what") &&
+    !lowerMsg.includes("how") &&
+    !lowerMsg.includes("when") &&
+    !lowerMsg.includes("where") &&
+    !lowerMsg.includes("who") &&
+    !lowerMsg.includes("why") &&
+    !lowerMsg.includes("tell") &&
+    !lowerMsg.includes("show") &&
+    !lowerMsg.includes("list");
+
+  // Check if user message looks like a time
+  const looksLikeTime = /^\d{1,2}(:\d{2})?\s*(am|pm)?$/i.test(message) ||
+    /^\d{1,2}\s*(am|pm)$/i.test(message);
+
+  // Check if user message looks like a date
+  const looksLikeDate = /^today$/i.test(message) ||
+    /^tomorrow$/i.test(message) ||
+    /^\d{4}-\d{2}-\d{2}$/i.test(message);
+
+  // DIRECT CHECK: If bot just asked for doctor name and user replies with what looks like a name
+  if ((lowerLastBot.includes("please provide a doctor name") ||
+      lowerLastBot.includes("provide a doctor name")) && looksLikeName) {
     return "APPOINTMENT";
   }
 
   // DIRECT CHECK: If bot just asked for a date and user replies with a date
   if (lowerLastBot.includes("when would you like") ||
-      lowerLastBot.includes("today") && lowerLastBot.includes("tomorrow") ||
+      (lowerLastBot.includes("today") && lowerLastBot.includes("tomorrow")) ||
       lowerLastBot.includes("or type a date")) {
-    return "APPOINTMENT";
+    if (looksLikeDate || looksLikeName) {
+      return "APPOINTMENT";
+    }
   }
 
   // DIRECT CHECK: If bot just showed available slots and user replies with a time
   if (lowerLastBot.includes("available slots") ||
       lowerLastBot.includes("preferred time") ||
       lowerLastBot.includes("reply with")) {
-    if (/^\d{1,2}(:\d{2})?\s*(am|pm)?$/i.test(lowerMsg) ||
-        /^\d{1,2}\s*(am|pm)$/i.test(lowerMsg) ||
-        /^at\s+\d/i.test(lowerMsg)) {
+    if (looksLikeTime) {
       return "APPOINTMENT";
     }
   }
