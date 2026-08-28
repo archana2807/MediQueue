@@ -70,6 +70,378 @@ MediQueue is a **hospital queue management system** with **AI-powered clinical d
 
 ---
 
+## Functionality Flow
+
+### 1. Authentication Flow
+
+```
+User visits /login
+       ↓
+Clicks role button (Admin/Doctor/Patient)
+       ↓
+Email auto-filled → Enters password → Clicks Login
+       ↓
+NextAuth.js validates credentials
+       ↓
+JWT token created → Redirected to dashboard based on role
+       ↓
+Sidebar shows role-specific menu items
+```
+
+**Role-Based Routing:**
+- Admin → /dashboard, /queue, /doctors, /appointments, /report-analyzer
+- Doctor → /dashboard, /my-queue, /my-patients, /my-appointments
+- Patient → /dashboard, /my-appointments
+
+---
+
+### 2. Chatbot Appointment Booking Flow
+
+```
+Patient clicks blue chat bubble
+       ↓
+Bot: "Hello! How can I help you today?"
+       ↓
+Patient: "How can I book an appointment?"
+       ↓
+Intent Detection: Pattern matching → APPOINTMENT
+       ↓
+Bot: "Please provide a doctor name."
+       ↓
+Patient: "Dr. Meena Iyer"
+       ↓
+Intent Detection: Last bot asked for doctor name + looks like name → APPOINTMENT
+       ↓
+Bot: "When would you like the appointment?
+      • today
+      • tomorrow
+      • Or type a date"
+       ↓
+Patient: "today"
+       ↓
+normalizeDate() → Gets IST date → "2026-08-28"
+       ↓
+findDoctor("Dr. Meena Iyer") → Fuzzy match → Found
+       ↓
+getDoctorAppointments() → Check existing bookings
+       ↓
+Filter available slots (remove booked + past time + lunch break)
+       ↓
+Bot: "Available slots: 09:00, 10:00, 11:00, 14:00, 15:00, 16:00, 17:00"
+       ↓
+Patient: "11:00"
+       ↓
+validateTime() → Check working hours (9-6), lunch break (1-2)
+       ↓
+istToUtc() → Convert "11:00" IST → "05:30" UTC
+       ↓
+createAppointment() → INSERT into database
+       ↓
+Bot: "✅ Appointment Booked!
+      Doctor: Dr. Meena Iyer
+      Date: 2026-08-28
+      Time: 11:00
+      Status: Pending"
+```
+
+---
+
+### 3. Intent Detection Flow
+
+```
+User message arrives at /api/chat
+       ↓
+Get conversation history from client
+       ↓
+Get last bot message from history
+       ↓
+DETERMINISTIC CHECKS (fast, no LLM):
+       ↓
+├─ Bot asked for "doctor name" + message looks like name? → APPOINTMENT
+├─ Bot asked for "date" + message is "today"/"tomorrow"/date? → APPOINTMENT
+├─ Bot showed "available slots" + message is time? → APPOINTMENT
+├─ Message contains "book"/"appointment"/"schedule"? → APPOINTMENT
+├─ Message contains "i have"/"i feel" (symptoms)? → SYMPTOM
+├─ Message contains "who is"/"show me" (doctors)? → DOCTOR
+├─ Message contains "queue"? → QUEUE
+├─ Message contains "history"? → HISTORY
+       ↓
+NO MATCH? → Call LLM for classification
+       ↓
+Route to appropriate handler:
+├─ FAQ → handleFAQ() → RAG retrieval → LLM answer
+├─ DOCTOR → handleDoctorSearch() → findDoctor() or list all
+├─ SYMPTOM → handleSymptoms() → Match symptoms to doctor
+├─ APPOINTMENT → handleAppointment() → Extract details → Book
+       ↓
+Return response to client
+```
+
+---
+
+### 4. Doctor Search Flow
+
+```
+Patient: "I have chest pain"
+       ↓
+Intent: SYMPTOM
+       ↓
+handleSymptoms() called
+       ↓
+Symptom mapping:
+├─ "chest pain" → Cardiology → Dr. Priya Sharma
+├─ "fever" → General Medicine → Dr. Meena Iyer
+├─ "knee hurts" → Orthopedics → Dr. Rahul Verma
+├─ "skin rash" → Dermatology → Dr. Vikram Patel
+├─ "child cough" → Pediatrics → Dr. Anita Desai
+       ↓
+Returns: "Based on your symptoms, I recommend Dr. Priya Sharma (Cardiology)."
+```
+
+---
+
+### 5. Queue Management Flow (Admin)
+
+```
+Admin logs in → Goes to /queue
+       ↓
+QueueTable component loads
+       ↓
+Fetches /api/queue with filters:
+├─ date: today (default)
+├─ doctorId: all (default)
+├─ search: ""
+       ↓
+GET /api/queue → SQL query with JOINs
+       ↓
+Returns: patients with doctor names, queue numbers, status
+       ↓
+DataTable renders with columns:
+├─ Queue # (badge)
+├─ Patient Name
+├─ Doctor
+├─ Time
+├─ Status (colored badge)
+├─ Actions (status buttons)
+       ↓
+Admin clicks "Waiting" button
+       ↓
+PUT /api/queue/[id] → UPDATE status
+       ↓
+Queue refetches → UI updates
+```
+
+---
+
+### 6. Doctor Workspace Flow
+
+```
+Doctor logs in → Goes to /my-queue
+       ↓
+Clicks "Complete" on IN_PROGRESS patient
+       ↓
+DoctorNotesModal opens
+       ↓
+Doctor types notes:
+"Hypertension. Prescribing Amlodipine 5mg. Allergic to Penicillin."
+       ↓
+Clicks "Extract from Notes"
+       ↓
+POST /api/ai/extract-clinical
+       ↓
+LLM parses notes → Returns JSON:
+{
+  "conditions": ["Hypertension"],
+  "medications": ["Amlodipine 5mg"],
+  "allergies": ["Penicillin"],
+  "observations": []
+}
+       ↓
+Tag-style UI populates with extracted data
+       ↓
+Doctor reviews → Can add/remove/modify tags
+       ↓
+Clicks "Generate AI Summary"
+       ↓
+POST /api/ai/summary
+       ↓
+LLM generates concise summary from clinical data
+       ↓
+Clicks "Save & Complete"
+       ↓
+PUT /api/queue/[id] → status: COMPLETED
+POST /api/appointments/[id]/notes → Save notes + clinical data
+       ↓
+Clinical data saved to:
+├─ patient_conditions
+├─ patient_medications
+├─ patient_allergies
+├─ patient_observations
+```
+
+---
+
+### 7. Clinical Agent Flow
+
+```
+Doctor/Admin goes to Patient Detail page
+       ↓
+Sees Clinical Agent panel
+       ↓
+Selects document type:
+├─ Handover Summary
+├─ Patient Summary
+├─ Risk Flags
+└─ Missing Information
+       ↓
+Clicks "Run Agent"
+       ↓
+POST /api/patients/[id]/agent
+       ↓
+Fetches patient context:
+├─ Basic info (name, age, contact)
+├─ Conditions (active/resolved)
+├─ Current medications
+├─ Known allergies
+├─ Recent observations
+├─ Visit history
+       ↓
+Context sent to LLM with document type prompt
+       ↓
+LLM generates concise 5-6 line summary
+       ↓
+Result displayed in agent panel
+       ↓
+Clicks "Save as Draft"
+       ↓
+POST /api/drafts → Save to patient_drafts table
+       ↓
+Draft appears in Saved Drafts panel
+```
+
+---
+
+### 8. Report Analyzer Flow
+
+```
+Admin goes to /report-analyzer
+       ↓
+Uploads PDF or image (medical report)
+       ↓
+File sent to /api/report-analyzer
+       ↓
+AI analyzes the report:
+├─ Extracts text (OCR for images)
+├─ Identifies key findings
+├─ Flags abnormal results
+├─ Generates recommendations
+       ↓
+Results displayed:
+├─ Key Findings (bullet points)
+├─ Abnormal Results (highlighted)
+├─ Recommendations (actionable items)
+       ↓
+Report stored in patient_reports table
+```
+
+---
+
+### 9. Data Flow Summary
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        CLIENT SIDE                          │
+├─────────────────────────────────────────────────────────────┤
+│  React Components → TanStack Query → API Routes             │
+│  Chatbot UI → POST /api/chat → Display response             │
+│  Forms → React Hook Form → Zod validation → Submit          │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                       API ROUTES                            │
+├─────────────────────────────────────────────────────────────┤
+│  /api/chat          → Intent detection → Route handler      │
+│  /api/appointments  → CRUD operations                      │
+│  /api/queue         → Queue management                     │
+│  /api/ai/*          → LLM calls (extraction, summary)      │
+│  /api/patients/*    → Patient context & clinical agent     │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                      DATABASE (PostgreSQL)                   │
+├─────────────────────────────────────────────────────────────┤
+│  users → doctors → appointments → appointment_notes         │
+│  patient_conditions, patient_medications                    │
+│  patient_allergies, patient_observations                    │
+│  patient_drafts, patient_reports, knowledge_chunks          │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┤
+│                      AI SERVICES                            │
+├─────────────────────────────────────────────────────────────┤
+│  OpenRouter API (GPT-4.1-nano)                              │
+│  ├─ Intent classification (LLM fallback)                    │
+│  ├─ FAQ answer generation (RAG)                             │
+│  ├─ Clinical data extraction from notes                     │
+│  ├─ AI summary generation                                   │
+│  └─ Report analysis                                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 10. Timezone Handling Flow
+
+```
+User in IST (India Standard Time, UTC+5:30)
+       ↓
+User enters time: "15:00" (3:00 PM IST)
+       ↓
+istToUtc("15:00") → Subtract 5:30 → "09:30" (UTC)
+       ↓
+Database stores: "2026-08-28 09:30:00" (TIMESTAMP, no timezone)
+       ↓
+Pg driver returns: Date object (interprets as UTC)
+       ↓
+JSON serialization: "2026-08-28T09:30:00.000Z"
+       ↓
+formatDateTime("2026-08-28T09:30:00.000Z")
+       ↓
+new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+       ↓
+Converts UTC → IST: Adds 5:30 → "03:00 PM"
+       ↓
+Displays: "28 Aug 2026, 03:00 PM"
+```
+
+---
+
+### 11. Slot Availability Flow
+
+```
+User asks for appointment date
+       ↓
+getDoctorAppointments(doctorId, date) → Fetch existing bookings
+       ↓
+Get booked times:
+existing.map(a => new Date(a.appointment_date)
+  .toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata" }))
+       ↓
+Example: ["09:00", "10:00"] (two appointments already booked)
+       ↓
+All slots: ["09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00"]
+       ↓
+Filter out booked: ["11:00", "12:00", "14:00", "15:00", "16:00", "17:00"]
+       ↓
+If today: Filter out past time:
+currentTime = new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata" })
+availableSlots.filter(slot => slot > currentTime)
+       ↓
+Return available slots to chatbot/form
+```
+
+---
+
 ## Key Features
 
 ### 1. AI Chatbot (Appointment Booking)
