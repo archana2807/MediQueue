@@ -860,14 +860,236 @@ A: Importance of timezone handling in healthcare apps. How to combine determinis
 
 ---
 
+## Full-Stack Architecture Questions
+
+### Database Design Questions
+
+**Q: Explain your database schema. How are the tables related?**
+A: 10 tables total:
+- `users` — stores all user accounts (Admin, Doctor, Patient) with role field
+- `doctors` — extends users with specialization, linked via user_id FK
+- `appointments` — links patient_id (→users), doctor_id (→doctors), stores date/time and status
+- `appointment_notes` — stores doctor notes and AI summary per appointment
+- `patient_conditions`, `patient_medications`, `patient_allergies`, `patient_observations` — clinical data tables, each linked to patient_id and visit_id (→appointments)
+- `patient_drafts` — stores AI-generated clinical documents
+- `knowledge_chunks` — FAQ data for RAG retrieval
+
+**Q: Why use separate tables for conditions, medications, allergies, and observations instead of a single clinical_data table?**
+A: Separate tables allow:
+- Type-specific fields (e.g., dosage for medications, severity for allergies)
+- Faster queries (no filtering by type)
+- Easier aggregation (count conditions vs medications)
+- Better data integrity (each table has its own constraints)
+- Simpler CRUD operations per clinical type
+
+**Q: Why use UUID instead of auto-increment IDs?**
+A: UUIDs are globally unique, prevent ID guessing attacks, work well with distributed systems, no collision risk across environments, and can be generated client-side without DB round-trip.
+
+**Q: What is the relationship between appointments and clinical data?**
+A: Each clinical table (conditions, medications, allergies, observations) has a `visit_id` FK pointing to appointments. This links clinical data to the specific visit when it was recorded. A patient can have multiple visits, each with different clinical data.
+
+**Q: How does the queue_number work?**
+A: Queue number is assigned per doctor per day. When a new appointment is created, the system queries `MAX(queue_number)` for that doctor on that date and increments by 1. This ensures sequential numbering within each doctor's daily queue.
+
+---
+
+### API Architecture Questions
+
+**Q: Explain your API route structure.**
+A: Next.js App Router with RESTful conventions:
+- `/api/appointments` — CRUD for appointments (GET list, POST create)
+- `/api/appointments/[id]` — Single appointment (GET, PUT, DELETE)
+- `/api/appointments/availability` — GET with doctorId and date params
+- `/api/chat` — POST for chatbot messages
+- `/api/queue` and `/api/queue/[id]` — Queue management
+- `/api/ai/*` — AI endpoints (extract-clinical, summary)
+- `/api/patients/[id]/*` — Patient-specific endpoints
+
+**Q: How do you handle authentication in API routes?**
+A: NextAuth.js `getServerSession(authOptions)` in each API route. Returns session with user ID and role. Routes check `session.user.role` before executing. For example, only PATIENT role can create appointments.
+
+**Q: How do you handle errors in API routes?**
+A: Try-catch blocks in each route handler. On error:
+1. Log the error with `console.error`
+2. Return appropriate HTTP status (500 for server errors)
+3. Return JSON with `success: false` and error message
+4. Client displays toast notification
+
+**Q: What is the `/api/appointments/availability` endpoint used for?**
+A: Called by the appointment form when user selects a doctor and date. Returns:
+- `availableSlots`: Array of available time strings (e.g., ["09:00", "10:00", ...])
+- `bookedSlots`: Array of already booked times
+Used to populate the time slot dropdown, excluding booked and past times.
+
+**Q: How does the chatbot API (`/api/chat`) work?**
+A: Receives `message` and `history` from client. Runs intent detection (deterministic patterns first, LLM fallback). Routes to appropriate handler (FAQ, DOCTOR, SYMPTOM, APPOINTMENT). Returns `{ success, answer, intent }`.
+
+---
+
+### Frontend Architecture Questions
+
+**Q: Explain your component structure.**
+A: Organized by feature:
+- `auth/` — LoginForm, RegisterForm
+- `chat/` — hospital-chat.tsx (chatbot UI)
+- `appointments/` — appointment-form, appointments-table, delete button
+- `patients/` — patient-appointments-table, doctor-queue-table, patients-table
+- `queue/` — queue-table, queue-actions
+- `dashboard/` — recent-appointments-card
+- `common/` — data-table (reusable), doctor-notes-modal, spinner
+- `ui/` — shadcn/ui components
+
+**Q: How do you handle state management?**
+A: TanStack Query (React Query) for server state:
+- `useQuery` for data fetching with caching (staleTime: 30s)
+- `useMutation` for create/update operations
+- Automatic refetch on window focus
+- Optimistic updates for queue status changes
+Local state with React `useState` for UI state (search, pagination, modals).
+
+**Q: How does the dashboard layout work?**
+A: `app/(dashboard)/layout.tsx` wraps all protected routes:
+- Checks authentication with NextAuth `useSession`
+- Redirects to `/login` if not authenticated
+- Renders sidebar + main content area
+- Sidebar shows different menu items based on user role
+
+**Q: How do you handle form validation?**
+A: React Hook Form with Zod schemas:
+- Client-side validation for immediate feedback
+- Server-side validation in API routes as second layer
+- Error messages displayed below form fields
+- Form resets after successful submission
+
+**Q: Explain the DataTable component.**
+A: Reusable component accepting:
+- `data`: Array of objects
+- `columns`: Column definitions with render functions
+- `total`, `totalPages`, `page`, `pageSize`: Pagination
+- `search`, `onSearchChange`: Search functionality
+- `onPageChange`, `onPageSizeChange`: Pagination callbacks
+Used across appointments, queue, patients, and doctor lists.
+
+---
+
+### AI Integration Questions
+
+**Q: How do you use AI in this project?**
+A: Three main AI use cases:
+1. **Chatbot** — Intent detection + FAQ answers + appointment booking
+2. **Clinical Extraction** — Parse doctor notes into structured data (conditions, medications, allergies)
+3. **AI Summary** — Generate concise clinical summaries from patient context
+
+All use OpenRouter API with GPT-4.1-nano model.
+
+**Q: How does the RAG (Retrieval Augmented Generation) work for FAQ?**
+A: `knowledge_chunks` table stores FAQ entries. When user asks a question:
+1. `retrieveContext()` searches knowledge_chunks using similarity matching
+2. Top matching chunks are retrieved
+3. Chunks are injected into LLM prompt as context
+4. LLM generates answer based only on provided context
+5. If no relevant context, returns "I don't have that information"
+
+**Q: How does the clinical data extraction work?**
+A: Doctor writes free-text notes in DoctorWorkspaceModal. On "Extract from Notes" click:
+1. Notes sent to `/api/ai/extract-clinical`
+2. LLM prompt includes JSON schema for conditions, medications, allergies, observations
+3. LLM parses notes and returns structured JSON
+4. Frontend populates tag-style UI with extracted data
+5. Doctor can review, add, or remove tags before saving
+
+**Q: How do you handle AI costs?**
+A: Using GPT-4.1-nano (cheapest model) via OpenRouter. Deterministic patterns reduce LLM calls. FAQ uses RAG to limit context size. Temperature set to 0 for consistent output. Max tokens limited per endpoint.
+
+---
+
+### Deployment Questions
+
+**Q: How is the project deployed?**
+A: Vercel deployment:
+- Git push triggers automatic build and deploy
+- Environment variables set in Vercel dashboard
+- PostgreSQL connection to Neon serverless (connection pooling)
+- Static assets served from Vercel CDN
+- API routes run as serverless functions
+
+**Q: What environment variables are needed?**
+A:
+- `DATABASE_URL` — PostgreSQL connection string (Neon)
+- `NEXTAUTH_SECRET` — Secret for JWT encryption
+- `NEXTAUTH_URL` — Base URL for callbacks
+- `OPENROUTER_API_KEY` — API key for AI services
+
+**Q: How do you handle database migrations?**
+A: SQL files in `database/migrations/`:
+1. `database.sql` — Creates all tables (IF NOT EXISTS)
+2. `003_reset_and_seed.sql` — Clears data and inserts seed data
+Run manually against Neon database. No migration tool (like Prisma Migrate) — raw SQL for full control.
+
+---
+
+### Security Questions
+
+**Q: How do you hash passwords?**
+A: bcrypt via NextAuth.js credentials provider. Passwords hashed with salt rounds before storage. Login compares hashed password with bcrypt.compare().
+
+**Q: How do you protect against SQL injection?**
+A: Parameterized queries with pg driver:
+```sql
+SELECT * FROM users WHERE id = $1
+```
+User input passed as parameters, never concatenated into SQL strings. The pg driver handles escaping automatically.
+
+**Q: How do you handle role-based access control?**
+A: Three layers:
+1. **Frontend**: Sidebar menu items filtered by role
+2. **API routes**: `session.user.role` checked before execution
+3. **Middleware**: Protected routes redirect unauthenticated users
+
+**Q: How do you secure patient data?**
+A: UUID-based IDs prevent guessing. API routes require authentication. No sensitive data in AI prompts. Timezone-safe date handling prevents data corruption. Patient data only accessible to assigned doctor and admins.
+
+---
+
+### Performance Questions
+
+**Q: How do you optimize database queries?**
+A:
+- JOINs instead of multiple queries
+- Pagination with LIMIT/OFFSET
+- Indexed columns (user_id, doctor_id, appointment_date)
+- Connection pooling with pg.Pool
+- SELECT specific columns instead of SELECT *
+
+**Q: How do you handle loading states?**
+A: TanStack Query provides `isLoading`, `isError`, `isFetching` states:
+- Skeleton loaders for initial data fetch
+- Spinner for mutations
+- Disabled buttons during API calls
+- Toast notifications for success/error feedback
+
+**Q: How would you scale this application?**
+A:
+- Redis caching for frequently accessed data (doctors, FAQ)
+- Database read replicas for query distribution
+- CDN for static assets (already on Vercel)
+- Rate limiting on API routes
+- WebSocket for real-time queue updates
+- Horizontal scaling with Vercel serverless functions
+
+---
+
 ## Files to Show in Interview
 
-| File | Purpose |
-|------|---------|
-| src/app/api/chat/route.ts | Chatbot intent detection + routing |
-| src/lib/queries/appointment-agent.ts | Booking logic with date/time validation |
-| src/lib/queries/appointments.ts | DB queries with IST→UTC conversion |
-| src/components/chat/hospital-chat.tsx | Chatbot UI |
-| src/components/common/doctor-notes-modal.tsx | Doctor Workspace UI |
-| src/app/api/ai/extract-clinical/route.ts | AI extraction endpoint |
-| src/lib/utils.ts | formatDateTime with IST timezone |
+| File | Purpose | What to Highlight |
+|------|---------|-------------------|
+| src/app/api/chat/route.ts | Chatbot intent detection | Deterministic pattern matching + LLM fallback |
+| src/lib/queries/appointment-agent.ts | Booking logic | Date validation, slot availability, IST→UTC |
+| src/lib/queries/appointments.ts | DB queries | istToUtc(), parameterized queries |
+| src/components/chat/hospital-chat.tsx | Chatbot UI | Message handling, history passing |
+| src/components/common/doctor-notes-modal.tsx | Doctor Workspace | AI extraction, tag UI, save flow |
+| src/app/api/ai/extract-clinical/route.ts | AI extraction | LLM prompt, JSON parsing |
+| src/lib/utils.ts | Utility functions | formatDateTime with IST timezone |
+| database/migrations/003_reset_and_seed.sql | Seed data | 5 doctors, 10 FAQ, clinical data |
+| src/middleware.ts | Auth middleware | Route protection |
+| src/lib/queries/rag.ts | RAG retrieval | FAQ context injection |
