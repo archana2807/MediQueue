@@ -194,7 +194,7 @@ details.appointmentDate =
 
 const appointmentDateTime =
   appointmentTime
-    ? `${details.appointmentDate} ${appointmentTime}:00`
+    ? `${details.appointmentDate}T${appointmentTime}:00+05:30`
     : null;
 
 
