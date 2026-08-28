@@ -10,11 +10,13 @@ export function cn(
 }
 
 export function formatDateTime(
-  date: string
+  dateStr: string
 ) {
-  return new Date(date).toLocaleString(
-    "en-IN",
-    {
+  // Parse "YYYY-MM-DD HH:mm:ss" or ISO string manually as IST
+  // to avoid JS Date interpreting timestamps as UTC
+  const match = dateStr.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!match) {
+    return new Date(dateStr).toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
       day: "2-digit",
       month: "short",
@@ -22,8 +24,13 @@ export function formatDateTime(
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
-    }
-  );
+    });
+  }
+  const [, y, mo, d, h, mi] = match;
+  const hour = parseInt(h);
+  const period = hour >= 12 ? "PM" : "AM";
+  const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${d} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(mo)-1]} ${y}, ${String(h12).padStart(2,"0")}:${mi} ${period}`;
 }
 
 export function getStatusClass(

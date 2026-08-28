@@ -194,7 +194,7 @@ details.appointmentDate =
 
 const appointmentDateTime =
   appointmentTime
-    ? `${details.appointmentDate}T${appointmentTime}:00+05:30`
+    ? `${details.appointmentDate} ${appointmentTime}:00`
     : null;
 
 
@@ -296,6 +296,7 @@ if (
       now.toLocaleTimeString(
         "en-GB",
         {
+          timeZone: "Asia/Kolkata",
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,
@@ -362,6 +363,7 @@ if (!appointmentTime) {
     existing.map((a) =>
       new Date(a.appointment_date)
         .toLocaleTimeString("en-GB", {
+          timeZone: "Asia/Kolkata",
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,
@@ -384,6 +386,7 @@ if (!appointmentTime) {
       new Date().toLocaleTimeString(
         "en-GB",
         {
+          timeZone: "Asia/Kolkata",
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,
@@ -484,6 +487,7 @@ if (conflict) {
     ).toLocaleTimeString(
       "en-GB",
       {
+        timeZone: "Asia/Kolkata",
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,
@@ -507,6 +511,7 @@ if (
     new Date().toLocaleTimeString(
       "en-GB",
       {
+        timeZone: "Asia/Kolkata",
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,

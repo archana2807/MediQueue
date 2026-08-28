@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Pencil, History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { getStatusClass } from "@/lib/utils";
+import { getStatusClass, formatDateTime } from "@/lib/utils";
 import DataTable from "@/components/common/data-table";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
@@ -76,19 +76,7 @@ const [debouncedSearch] =
     (appointment: Appointment) => ({
       ...appointment,
       appointment_date:
-        new Date(
-          appointment.appointment_date
-        ).toLocaleString(
-          "en-IN",
-          {
-            timeZone: "Asia/Kolkata",
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          }
-        ),
+        formatDateTime(appointment.appointment_date),
     })
   );
 
