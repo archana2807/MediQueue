@@ -99,12 +99,42 @@ Type each question one by one and check the answer:
 
 | # | Step 1 — Type This | Step 2 — Then Type | What Happens |
 |---|--------------------|--------------------|--------------|
-| 27 | Book appointment with Dr. Meena Iyer | 11:00 | Appointment booked with confirmation |
-| 28 | Book appointment with Dr. Priya Sharma tomorrow | 14:00 | Books for tomorrow |
-| 29 | I want to see Dr. Rahul at 2 PM | (nothing, auto-books) | Books directly at 14:00 |
-| 30 | Book appointment with Dr Meena at 11:00 | (nothing, auto-books) | Finds Dr. Meena Iyer (no dot) |
-| 31 | Book with Priya at 10:00 | (nothing, auto-books) | Finds Dr. Priya Sharma |
-| 32 | Book appointment with Dr. Vikram Patel | (shows slots) | Pick a time, then type it |
+| 27 | How can I book an appointment? | Dr. Meena Iyer | Bot asks for doctor name, then shows slots |
+| 28 | Book appointment with Dr. Meena Iyer | 11:00 | Appointment booked with confirmation |
+| 29 | Book appointment with Dr. Priya Sharma tomorrow | 14:00 | Books for tomorrow |
+| 30 | I want to see Dr. Rahul at 2 PM | (nothing, auto-books) | Books directly at 14:00 |
+| 31 | Book appointment with Dr Meena at 11:00 | (nothing, auto-books) | Finds Dr. Meena Iyer (no dot) |
+| 32 | Book with Priya at 10:00 | (nothing, auto-books) | Finds Dr. Priya Sharma |
+| 33 | Book appointment with Dr. Vikram Patel | (shows slots) | Pick a time, then type it |
+
+**How the booking flow works:**
+
+```
+You:  How can I book an appointment?
+Bot:  Please provide a doctor name.
+
+You:  Dr. Meena Iyer
+Bot:  Dr. Meena Iyer is available on [date].
+      Available slots:
+      ✓ 09:00
+      ✓ 10:00
+      ✓ 11:00
+      ✓ 12:00
+      ✓ 14:00
+      ✓ 15:00
+      ✓ 16:00
+      ✓ 17:00
+      Reply with your preferred time.
+
+You:  11:00
+Bot:  ✅ Appointment Booked
+      Doctor: Dr. Meena Iyer
+      Date: 2026-08-28
+      Time: 11:00
+      Estimated Wait: 0 min
+      Appointment ID: [id]
+      Status: Pending
+```
 
 **PASS:** Appointment Booked confirmation with Doctor, Date, Time, ID
 **FAIL:** Error message or no booking
@@ -262,6 +292,13 @@ Type each question one by one and check the answer:
 
 ## How to Book an Appointment (All Phrases That Work)
 
+**Start with a general question — bot will guide you:**
+```
+How can I book an appointment?
+```
+Bot responds: **"Please provide a doctor name."** → Then you give the doctor name → Then you pick a time.
+
+**Or give all details at once:**
 ```
 Book appointment with Dr. Meena Iyer at 11:00
 Book with Priya at 10:00
