@@ -48,6 +48,26 @@ MediQueue is a **hospital queue management system** with **AI-powered clinical d
 | Doctor | doctor@gmail.com | My Queue, Complete Appointments, AI Notes |
 | Patient | patient@gmail.com | Book Appointments, My Appointments, Chatbot |
 
+### How to Access
+
+1. Go to https://medi-queue-beige.vercel.app/login
+2. Click on any role button to auto-fill the email
+3. Enter password: `Admain`
+4. Click Login
+
+### Try the Chatbot
+
+1. Login as **Patient**
+2. Click the **blue chat bubble** in the bottom-right corner
+3. Ask: *"How can I book an appointment?"*
+4. Follow the guided flow: Doctor → Date → Time → Booked!
+
+### Try the Demo Flow
+
+1. **Patient**: Login → Open chatbot → Book appointment → View My Appointments
+2. **Doctor**: Login → Go to My Queue → Complete a patient → Add notes → AI Summary
+3. **Admin**: Login → View Dashboard → Queue Management → Report Analyzer
+
 ---
 
 ## Key Features
