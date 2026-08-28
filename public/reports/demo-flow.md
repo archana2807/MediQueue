@@ -100,7 +100,14 @@ You:    How can I book an appointment?
 Bot:    Please provide a doctor name.
 
 You:    Dr. Meena Iyer
-Bot:    Dr. Meena Iyer is available on [today's date].
+Bot:    Great! You want to book with Dr. Meena Iyer.
+        When would you like the appointment?
+        • Reply with "today" for today
+        • Reply with "tomorrow" for tomorrow
+        • Or type a date like "2026-08-30"
+
+You:    today
+Bot:    Dr. Meena Iyer is available on 2026-08-28.
         Available slots:
         ✓ 09:00
         ✓ 10:00
@@ -122,16 +129,25 @@ Bot:    ✅ Appointment Booked
         Status: Pending
 ```
 
+#### Booking Flow Summary:
+
+```
+Step 1: "How can I book an appointment?"
+Step 2: "Dr. Meena Iyer"          → Bot asks for date
+Step 3: "today" / "tomorrow" / "2026-08-30"  → Bot shows available slots
+Step 4: "11:00"                   → Appointment booked!
+```
+
 #### More Booking Examples:
 
 | # | You Say | What Happens |
 |---|---------|--------------|
-| 27 | Book appointment with Dr. Meena Iyer | Shows available slots |
+| 27 | Book appointment with Dr. Meena Iyer | Asks for date, then shows slots |
 | 28 | Book appointment with Dr. Priya Sharma tomorrow | Shows slots for tomorrow |
-| 29 | I want to see Dr. Rahul at 2 PM | Books directly |
+| 29 | I want to see Dr. Rahul at 2 PM | Books directly (date defaults to today) |
 | 30 | Book appointment with Dr Meena at 11:00 | Works without the dot |
 | 31 | Book with Priya at 10:00 | Finds Dr. Priya Sharma |
-| 32 | Book appointment with Dr. Vikram Patel | Shows slots, then you pick a time |
+| 32 | Book appointment with Dr. Vikram Patel | Asks for date, then shows slots |
 
 ---
 
@@ -164,9 +180,10 @@ Bot:    ✅ Appointment Booked
 | Turn | You Say | Bot Should... |
 |------|---------|---------------|
 | 1 | I have fever | Recommend Dr. Meena Iyer |
-| 2 | Book appointment with her | Show slots for Dr. Meena |
-| 3 | 11:00 | Book the appointment |
-| 4 | What time do you open? | Answer about hospital hours |
+| 2 | Book appointment with her | Ask for a date |
+| 3 | today | Show slots for Dr. Meena |
+| 4 | 11:00 | Book the appointment |
+| 5 | What time do you open? | Answer about hospital hours |
 
 The bot should remember that "her" means Dr. Meena from the first message.
 
@@ -278,7 +295,7 @@ The bot should remember that "her" means Dr. Meena from the first message.
 ```
 How can I book an appointment?
 ```
-The bot will ask for a doctor name, then show available times.
+The bot will ask for a doctor name, then ask for a date, then show available times.
 
 **Or say everything at once:**
 ```
