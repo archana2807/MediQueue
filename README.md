@@ -274,31 +274,330 @@ Open http://localhost:3000
 ## Project Structure
 
 ```
-src/
-├── app/
-│   ├── api/
-│   │   ├── chat/route.ts              # Chatbot API (intent detection + routing)
-│   │   ├── appointments/route.ts      # CRUD for appointments
-│   │   └── appointments/availability/ # Slot availability check
-│   └── (dashboard)/                   # Dashboard pages
-├── components/
-│   ├── chat/hospital-chat.tsx         # Chatbot UI
-│   ├── appointments/                  # Appointment forms and tables
-│   ├── patients/                      # Patient views
-│   └── queue/                         # Queue management
-├── lib/
-│   ├── queries/
-│   │   ├── appointment-agent.ts       # Appointment booking logic
-│   │   ├── doctor-agent.ts            # Doctor search & symptom analysis
-│   │   ├── appointments.ts            # Database queries
-│   │   └── rag.ts                     # RAG for FAQ retrieval
-│   ├── ai/client.ts                   # OpenAI client
-│   └── utils.ts                       # Utility functions
-database/
-├── sql                                 # Main schema
-└── migrations/
-    └── 003_reset_and_seed.sql          # Seed data (5 doctors, 10 FAQ chunks)
+MediQueue/
+├── src/
+│   ├── app/
+│   │   ├── (auth)/
+│   │   │   ├── login/page.tsx                    # Login page
+│   │   │   └── register/page.tsx                 # Register page
+│   │   ├── (dashboard)/
+│   │   │   ├── layout.tsx                        # Dashboard layout (sidebar + auth)
+│   │   │   ├── page.tsx                          # Dashboard home
+│   │   │   ├── appointments/
+│   │   │   │   ├── page.tsx                      # Appointments list (Admin)
+│   │   │   │   ├── new/page.tsx                  # Create appointment
+│   │   │   │   └── [id]/edit/page.tsx            # Edit appointment
+│   │   │   ├── doctors/page.tsx                  # Doctor management (Admin)
+│   │   │   ├── my-appointments/page.tsx          # Patient appointments
+│   │   │   ├── my-patients/page.tsx              # Doctor's patients
+│   │   │   ├── my-queue/page.tsx                 # Doctor's queue
+│   │   │   ├── patients/
+│   │   │   │   ├── page.tsx                      # Patient list (Admin)
+│   │   │   │   └── [id]/
+│   │   │   │       ├── page.tsx                  # Patient detail
+│   │   │   │       └── history/page.tsx          # Patient history
+│   │   │   ├── queue/page.tsx                    # Queue management (Admin)
+│   │   │   └── report-analyzer/page.tsx          # Report analyzer (Admin)
+│   │   ├── api/
+│   │   │   ├── auth/[...nextauth]/route.ts       # NextAuth config
+│   │   │   ├── chat/route.ts                     # Chatbot API
+│   │   │   ├── appointments/
+│   │   │   │   ├── route.ts                      # GET/POST appointments
+│   │   │   │   ├── [id]/route.ts                 # GET/PUT/DELETE appointment
+│   │   │   │   └── availability/route.ts         # Slot availability
+│   │   │   ├── my-appointments/
+│   │   │   │   ├── patient/route.ts              # Patient's appointments
+│   │   │   │   └── doctor/route.ts               # Doctor's appointments
+│   │   │   ├── queue/
+│   │   │   │   ├── route.ts                      # GET queue list
+│   │   │   │   └── [id]/route.ts                 # PUT queue status
+│   │   │   ├── doctors/route.ts                  # Doctor CRUD
+│   │   │   ├── patients/
+│   │   │   │   ├── route.ts                      # Patient list
+│   │   │   │   └── [id]/
+│   │   │   │       ├── route.ts                  # Patient detail
+│   │   │   │       ├── context/route.ts          # Patient context
+│   │   │   │       └── agent/route.ts            # Clinical agent
+│   │   │   ├── ai/
+│   │   │   │   ├── summary/route.ts              # AI summary
+│   │   │   │   └── extract-clinical/route.ts     # Clinical extraction
+│   │   │   ├── drafts/route.ts                   # Saved drafts CRUD
+│   │   │   └── report-analyzer/route.ts          # Report analysis
+│   │   └── layout.tsx                            # Root layout
+│   ├── components/
+│   │   ├── auth/
+│   │   │   ├── LoginForm.tsx                     # Login form
+│   │   │   └── RegisterForm.tsx                  # Register form
+│   │   ├── chat/
+│   │   │   └── hospital-chat.tsx                 # Chatbot UI
+│   │   ├── appointments/
+│   │   │   ├── appointment-form.tsx              # Appointment create/edit form
+│   │   │   ├── appointments-table.tsx            # Appointments list (Admin)
+│   │   │   └── delete-appointment-button.tsx     # Delete button
+│   │   ├── patients/
+│   │   │   ├── patient-appointments-table.tsx    # Patient's appointments
+│   │   │   ├── doctor-appointments-table.tsx     # Doctor's appointments
+│   │   │   ├── doctor-queue-table.tsx            # Doctor's queue
+│   │   │   ├── patient-raw-data.tsx              # Raw patient data
+│   │   │   └── patients-table.tsx                # Patient list
+│   │   ├── queue/
+│   │   │   ├── queue-table.tsx                   # Admin queue table
+│   │   │   └── queue-actions.tsx                 # Status action buttons
+│   │   ├── dashboard/
+│   │   │   └── recent-appointments-card.tsx      # Recent appointments
+│   │   ├── doctors/
+│   │   │   └── doctors-table.tsx                 # Doctor list
+│   │   ├── sidebar/
+│   │   │   └── sidebar.tsx                       # Navigation sidebar
+│   │   ├── common/
+│   │   │   ├── data-table.tsx                    # Reusable data table
+│   │   │   ├── doctor-notes-modal.tsx            # Doctor Workspace modal
+│   │   │   └── spinner.tsx                       # Loading spinner
+│   │   └── ui/                                   # shadcn/ui components
+│   ├── lib/
+│   │   ├── ai/
+│   │   │   ├── client.ts                         # OpenAI client
+│   │   │   └── model.ts                         # Model: gpt-4.1-nano
+│   │   ├── queries/
+│   │   │   ├── appointment-agent.ts              # Chatbot booking logic
+│   │   │   ├── doctor-agent.ts                   # Doctor search & symptoms
+│   │   │   ├── appointments.ts                   # Appointment DB queries
+│   │   │   ├── clinical-data.ts                  # Clinical data CRUD
+│   │   │   ├── patient-context.ts                # Patient context builder
+│   │   │   ├── appointment-notes.ts              # Notes + clinical
+│   │   │   ├── doctors.ts                        # Doctor queries
+│   │   │   ├── queue.ts                          # Queue queries
+│   │   │   └── rag.ts                            # RAG for FAQ retrieval
+│   │   ├── db.ts                                 # PostgreSQL pool
+│   │   ├── auth.ts                               # NextAuth config
+│   │   └── utils.ts                              # Utility functions
+│   └── middleware.ts                              # Auth middleware
+├── database/
+│   ├── sql                                       # Main schema
+│   └── migrations/
+│       └── 003_reset_and_seed.sql                # Seed data
+├── public/
+│   └── README.md                                 # Static README
+├── package.json
+├── tsconfig.json
+├── tailwind.config.ts
+└── next.config.ts
 ```
+
+---
+
+## Database Schema
+
+### Entity Relationship Diagram
+
+```
+┌─────────────┐       ┌─────────────┐       ┌─────────────────┐
+│    users     │       │   doctors    │       │  appointments   │
+├─────────────┤       ├─────────────┤       ├─────────────────┤
+│ id (UUID)   │──┐    │ id (UUID)   │──┐    │ id (UUID)       │
+│ name        │  │    │ user_id (FK)│←─┘    │ patient_id (FK) │←── users.id
+│ email       │  │    │specialization│      │ doctor_id (FK)  │←── doctors.id
+│ phone       │  │    └─────────────┘       │appointment_date │
+│ password    │  │                          │ queue_number    │
+│ role        │  │                          │ status          │
+│ created_at  │  │                          └─────────────────┘
+└─────────────┘  │                                   │
+                 │                                   │
+                 │    ┌─────────────────────┐        │
+                 │    │  appointment_notes   │        │
+                 │    ├─────────────────────┤        │
+                 │    │ id (UUID)           │        │
+                 │    │ appointment_id (FK) │←───────┘
+                 │    │ doctor_notes (TEXT)  │
+                 │    │ ai_summary (TEXT)    │
+                 │    └─────────────────────┘
+                 │
+                 │    ┌─────────────────────┐
+                 │    │  patient_conditions  │
+                 │    ├─────────────────────┤
+                 │    │ id (UUID)           │
+                 ├───→│ patient_id (FK)     │
+                 │    │ condition_name      │
+                 │    │ status              │
+                 │    │ visit_id (FK)       │←── appointments.id
+                 │    └─────────────────────┘
+                 │
+                 │    ┌─────────────────────┐
+                 │    │  patient_medications │
+                 │    ├─────────────────────┤
+                 │    │ id (UUID)           │
+                 ├───→│ patient_id (FK)     │
+                 │    │ name                │
+                 │    │ dosage              │
+                 │    │ frequency           │
+                 │    │ visit_id (FK)       │←── appointments.id
+                 │    └─────────────────────┘
+                 │
+                 │    ┌─────────────────────┐
+                 │    │  patient_allergies   │
+                 │    ├─────────────────────┤
+                 │    │ id (UUID)           │
+                 ├───→│ patient_id (FK)     │
+                 │    │ allergen            │
+                 │    │ severity            │
+                 │    │ visit_id (FK)       │←── appointments.id
+                 │    └─────────────────────┘
+                 │
+                 │    ┌─────────────────────┐
+                 │    │ patient_observations │
+                 │    ├─────────────────────┤
+                 │    │ id (UUID)           │
+                 ├───→│ patient_id (FK)     │
+                 │    │ observation         │
+                 │    │ visit_id (FK)       │←── appointments.id
+                 │    └─────────────────────┘
+                 │
+                 │    ┌─────────────────────┐
+                 │    │   patient_drafts     │
+                 │    ├─────────────────────┤
+                 │    │ id (UUID)           │
+                 ├───→│ patient_id (FK)     │
+                 │    │ task_type           │
+                 │    │ content             │
+                 │    │ evidence_references │
+                 │    │ created_at          │
+                 │    └─────────────────────┘
+                 │
+                 │    ┌─────────────────────┐
+                 │    │  patient_reports     │
+                 │    ├─────────────────────┤
+                 │    │ id (UUID)           │
+                 └───→│ patient_id (FK)     │
+                      │ file_name           │
+                      │ file_type           │
+                      │ file_url            │
+                      │ ai_analysis         │
+                      │ created_at          │
+                      └─────────────────────┘
+```
+
+### Tables Detail
+
+#### users
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Auto-generated |
+| name | VARCHAR(255) | NOT NULL | Full name |
+| email | VARCHAR(255) | UNIQUE | Email address |
+| phone | VARCHAR(20) | | Phone number |
+| password | VARCHAR(255) | NOT NULL | Hashed password (bcrypt) |
+| role | ENUM | NOT NULL | ADMIN, DOCTOR, PATIENT |
+| created_at | TIMESTAMP | DEFAULT NOW() | Registration date |
+
+#### doctors
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Auto-generated |
+| user_id | UUID | FK → users.id | Links to user account |
+| specialization | VARCHAR(100) | NOT NULL | Cardiology, Orthopedics, etc. |
+
+#### appointments
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Auto-generated |
+| patient_id | UUID | FK → users.id | Patient user |
+| doctor_id | UUID | FK → doctors.id | Assigned doctor |
+| appointment_date | TIMESTAMP | NOT NULL | Scheduled time (stored as UTC) |
+| queue_number | INTEGER | | Queue position per doctor per day |
+| status | VARCHAR(30) | DEFAULT 'PENDING' | PENDING, CONFIRMED, CHECKED_IN, WAITING, IN_PROGRESS, COMPLETED, CANCELLED |
+
+#### appointment_notes
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Auto-generated |
+| appointment_id | UUID | FK → appointments.id | Linked appointment |
+| doctor_notes | TEXT | | Doctor's free-text notes |
+| ai_summary | TEXT | | AI-generated summary |
+
+#### patient_conditions
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Auto-generated |
+| patient_id | UUID | FK → users.id | Patient user |
+| condition_name | TEXT | NOT NULL | e.g., "Hypertension" |
+| status | TEXT | | "active" or "resolved" |
+| visit_id | UUID | FK → appointments.id | Associated visit |
+
+#### patient_medications
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Auto-generated |
+| patient_id | UUID | FK → users.id | Patient user |
+| name | TEXT | NOT NULL | e.g., "Amlodipine" |
+| dosage | TEXT | | e.g., "5mg" |
+| frequency | TEXT | | e.g., "once daily" |
+| visit_id | UUID | FK → appointments.id | Associated visit |
+
+#### patient_allergies
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Auto-generated |
+| patient_id | UUID | FK → users.id | Patient user |
+| allergen | TEXT | NOT NULL | e.g., "Penicillin" |
+| severity | TEXT | | "mild", "moderate", "severe" |
+| visit_id | UUID | FK → appointments.id | Associated visit |
+
+#### patient_observations
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Auto-generated |
+| patient_id | UUID | FK → users.id | Patient user |
+| observation | TEXT | NOT NULL | e.g., "BP 140/90 mmHg" |
+| visit_id | UUID | FK → appointments.id | Associated visit |
+
+#### patient_drafts
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Auto-generated |
+| patient_id | UUID | FK → users.id | Patient user |
+| task_type | VARCHAR(50) | NOT NULL | Handover Summary, Risk Flags, etc. |
+| content | TEXT | NOT NULL | Generated document content |
+| evidence_references | JSONB | DEFAULT '[]' | Source references |
+| created_at | TIMESTAMP | DEFAULT NOW() | Creation date |
+
+#### knowledge_chunks (FAQ)
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Auto-generated |
+| title | TEXT | NOT NULL | FAQ title |
+| content | TEXT | NOT NULL | FAQ answer |
+| category | TEXT | | Category for filtering |
+
+---
+
+## API Routes
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/auth/[...nextauth] | Authentication |
+| POST | /api/chat | Chatbot message processing |
+| GET | /api/appointments | List appointments (Admin) |
+| POST | /api/appointments | Create appointment |
+| GET | /api/appointments/[id] | Get appointment |
+| PUT | /api/appointments/[id] | Update appointment |
+| DELETE | /api/appointments/[id] | Delete appointment |
+| GET | /api/appointments/availability | Check slot availability |
+| GET | /api/my-appointments/patient | Patient's appointments |
+| GET | /api/my-appointments/doctor | Doctor's appointments |
+| GET | /api/queue | List queue (Admin) |
+| PUT | /api/queue/[id] | Update queue status |
+| GET | /api/doctors | List doctors |
+| POST | /api/doctors | Create doctor |
+| GET | /api/patients | List patients |
+| GET | /api/patients/[id] | Patient detail |
+| GET | /api/patients/[id]/context | Patient context for AI |
+| POST | /api/patients/[id]/agent | Run clinical agent |
+| POST | /api/ai/extract-clinical | Extract clinical data from notes |
+| POST | /api/ai/summary | Generate AI summary |
+| GET | /api/drafts | List saved drafts |
+| POST | /api/drafts | Save draft |
+| DELETE | /api/drafts/[id] | Delete draft |
+| POST | /api/report-analyzer | Analyze uploaded report |
 
 ---
 
