@@ -19,6 +19,12 @@ const BLOCKED_SLOTS = [
 
 
 
+function getIstDate(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(new Date());
+}
+
 function normalizeDate(
   originalMessage: string,
   extractedDate: string
@@ -26,22 +32,21 @@ function normalizeDate(
   const text =
     originalMessage.toLowerCase();
 
-  const today = new Date();
-
   if (text.includes("tomorrow")) {
-    today.setDate(
-      today.getDate() + 1
-    );
-
-    return today
-      .toISOString()
-      .split("T")[0];
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+    }).format(d);
   }
 
   if (text.includes("today")) {
-    return today
-      .toISOString()
-      .split("T")[0];
+    return getIstDate();
+  }
+
+  // If no date extracted, default to today IST
+  if (!extractedDate) {
+    return getIstDate();
   }
 
   return extractedDate;
@@ -51,10 +56,7 @@ export async function extractAppointmentDetails(
   message: string,
   history?: Array<{ role: string; content: string }>
 ) {
-  const today =
-    new Date()
-      .toISOString()
-      .split("T")[0];
+  const today = getIstDate();
 
   const historyContext = history && history.length > 0
     ? `\n\nConversation history (use this to fill in missing details):\n${history.map(m => `${m.role}: ${m.content}`).join("\n")}`
@@ -247,13 +249,7 @@ Invalid appointment date.
 Please provide a future date.
 `;
     }
-   const todayString =
-  new Intl.DateTimeFormat(
-    "en-CA",
-    {
-      timeZone: "Asia/Kolkata",
-    }
-  ).format(new Date());
+   const todayString = getIstDate();
 
 if (
   details.appointmentDate ===
