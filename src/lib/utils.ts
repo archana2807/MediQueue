@@ -12,8 +12,7 @@ export function cn(
 export function formatDateTime(
   dateStr: string
 ) {
-  const d = new Date(dateStr);
-  return d.toLocaleString("en-IN", {
+  return new Date(dateStr).toLocaleString("en-IN", {
     timeZone: "Asia/Kolkata",
     day: "2-digit",
     month: "short",
@@ -21,18 +20,6 @@ export function formatDateTime(
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
-  });
-}
-
-export function formatTimeIST(
-  dateStr: string
-) {
-  const d = new Date(dateStr);
-  return d.toLocaleTimeString("en-GB", {
-    timeZone: "Asia/Kolkata",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
   });
 }
 
