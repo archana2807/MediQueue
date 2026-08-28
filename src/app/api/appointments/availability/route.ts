@@ -54,8 +54,12 @@ export async function GET(
         );
 
         return d
-          .toTimeString()
-          .slice(0, 5);
+          .toLocaleTimeString("en-GB", {
+            timeZone: "Asia/Kolkata",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          });
       });
 
     const availableSlots =
